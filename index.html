@@ -962,7 +962,7 @@ async function renderAdmin() {
     <div id="aerr" class="errbox hide"></div>
     <div class="row" style="margin:14px 0 6px"><div class="grow"><input type="text" id="new-loc" placeholder="New location name, e.g. Roof & Water Tanks"></div><button class="btn pri" id="add-loc">＋ Add location</button></div>
     <div id="alist"><div class="empty"><span class="spin"></span></div></div></div>`;
-  $('#add-loc').onclick = addLoc; $('#new-loc').onkeydown = e => e.key === 'Enter' && addLoc();
+  $('#add-loc').onclick = addLoc; $('#new-loc').addEventListener('keydown', e => { if (e.key === 'Enter') addLoc(); });
   // report filters
   const setRange = (f, t) => { $('#rp-from').value = f; $('#rp-to').value = t; updateCount(); };
   $$('.pre button').forEach(b => b.onclick = () => {
