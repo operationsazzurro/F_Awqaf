@@ -529,6 +529,7 @@ function renderOverview() {
           ${done ? (S.admin ? `<button class="btn pri" data-rep="pdf" data-id="${last.id}">⬇ Generate PDF Report</button>
                     <button class="btn" data-rep="xlsx" data-id="${last.id}">⬇ Excel Report</button>` : '')
                  : `<button class="btn pri" data-resume="${last.id}">Resume inspection</button>`}
+          ${S.admin ? `<button class="btn" data-del="${last.id}">🗑 Delete</button>` : ''}
         </div>
       </div></div>`;
   }
@@ -568,16 +569,43 @@ function renderVList() {
       <div class="chips" style="--x:0">${chips(tally(v.visit_items)).replace(/chip c-/g, 'chip c-')}</div>
       <div class="acts">${done
         ? (S.admin ? `<button class="btn sm" data-rep="pdf" data-id="${v.id}">PDF</button><button class="btn sm" data-rep="xlsx" data-id="${v.id}">Excel</button>` : '')
-        : `<button class="btn sm pri" data-resume="${v.id}">Resume</button>`}</div>
+        : `<button class="btn sm pri" data-resume="${v.id}">Resume</button>`}${S.admin ? `<button class="btn sm danger" data-del="${v.id}" title="Delete this visit" aria-label="Delete visit">🗑</button>` : ''}</div>
     </div>`;
   }).join('') + (list.length > OV.shown ? `<div style="text-align:center;padding-top:12px"><button class="btn sm" id="more">Show more (${list.length - OV.shown})</button></div>` : '');
   const more = $('#more'); if (more) more.onclick = () => { OV.shown += 20; renderVList(); bindActions(box); };
   bindActions(box);
 }
 
+/* best-effort removal of photo files from Cloudflare (needs the updated worker.js; failures are ignored) */
+async function deletePhotos(urls) {
+  const base = (CONFIG.UPLOAD_URL || '').replace(/\/$/, '');
+  if (!base) return;
+  await Promise.allSettled([...new Set(urls)].filter(u => u && u.startsWith(base + '/f/')).map(u =>
+    fetch(u, {method: 'DELETE', headers: {'Authorization': 'Bearer ' + CONFIG.UPLOAD_TOKEN}})));
+}
+
+async function deleteVisit(btn, id) {
+  if (!S.admin) return toast('Only admins can delete visits', true);
+  const v = OV.visits.find(x => x.id === id); if (!v) return;
+  if (!confirm(`Delete this inspection?\n\nMosque ${v.mosque_number} - ${v.mosque_name || ''}\n${fmtDT(v.started_at)}\n\nAll its results, remarks and photos will be permanently removed. This cannot be undone.`)) return;
+  btn.disabled = true;
+  try {
+    const {data: its, error: e1} = await sb.from('visit_items').select('photos').eq('visit_id', id);
+    if (e1) throw e1;
+    const {error} = await sb.from('visits').delete().eq('id', id);
+    if (error) throw error;
+    OV.visits = OV.visits.filter(x => x.id !== id);
+    if (S.visit && S.visit.id === id) { Object.values(S.timers).forEach(clearTimeout); S.timers = {}; resetInspection(); }
+    renderOverview();
+    toast('Inspection deleted');
+    deletePhotos((its || []).flatMap(i => i.photos || []));
+  } catch (e) { btn.disabled = false; toast('Could not delete: ' + (e.message || e), true); console.error(e); }
+}
+
 function bindActions(root) {
   $$('[data-rep]', root).forEach(b => b.onclick = () => runReport(b, b.dataset.rep, b.dataset.id));
   $$('[data-resume]', root).forEach(b => b.onclick = () => resumeVisit(b.dataset.resume));
+  $$('[data-del]', root).forEach(b => b.onclick = () => deleteVisit(b, b.dataset.del));
 }
 
 /* =====================================================================
@@ -777,7 +805,8 @@ function renderPhotos(k) {
   $$('img', box).forEach(im => im.onclick = () => { $('#lb img').src = im.dataset.full; $('#lb').classList.add('on'); });
   $$('[data-rm]', box).forEach(b => b.onclick = () => {
     if (!confirm('Remove this photo?')) return;
-    it.photos.splice(+b.dataset.rm, 1); renderPhotos(k); queueSave(k);
+    const [gone] = it.photos.splice(+b.dataset.rm, 1); renderPhotos(k);
+    clearTimeout(S.timers[k]); setSave('saving'); saveItem(k).then(ok => ok && deletePhotos([gone]));
   });
   const add = $('.addph', box);
   const open = () => { it.err = 0; pickFiles(k); };
@@ -913,8 +942,10 @@ function resetInspection() {
 
 async function discardVisit() {
   if (!confirm('Discard this inspection? Everything recorded for this visit will be deleted.')) return;
+  const pics = S.order.flatMap(o => S.items[o.key].photos);
   const {error} = await sb.from('visits').delete().eq('id', S.visit.id);
   if (error) return toast('Could not discard: ' + error.message, true);
+  deletePhotos(pics);
   Object.values(S.timers).forEach(clearTimeout); S.timers = {};
   resetInspection(); toast('Inspection discarded'); go('overview');
 }
