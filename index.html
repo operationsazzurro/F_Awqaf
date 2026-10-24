@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5b4a">
+<title>Fujairah Awqaf – Soft Services Inspection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#0f5b4a; --g2:#0b4538; --g3:#e6f1ed; --gold:#b8893b; --bg:#f5f2ea; --card:#fff;
+  --ink:#1d2623; --mut:#68746f; --line:#e3ded2; --soft:#faf8f3;
+  --good:#2e7d4f; --fair:#d9951a; --poor:#c0392b; --na:#7b8791;
+  --r:14px; --sh:0 1px 2px rgba(20,40,32,.06),0 6px 20px rgba(20,40,32,.06);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:80px}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;line-height:1.25}
+.top{background:var(--g);color:#fff;position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.top-in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+.brand .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#d6ad62,#b8893b);display:grid;place-items:center;color:#0b4538;font-size:18px}
+.brand small{display:block;font-weight:500;opacity:.75;font-size:11.5px;letter-spacing:.4px;margin-top:-2px}
+nav{display:flex;gap:4px;margin-left:auto}
+.top-in .who{margin-left:4px}
+nav button{background:transparent;border:0;color:#cfe6de;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+nav button:hover{background:rgba(255,255,255,.1)}
+nav button.on{background:#fff;color:var(--g)}
+main{max-width:1100px;margin:0 auto;padding:18px 16px}
+section.view{display:none}
+section.view.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px}
+.card + .card{margin-top:16px}
+.card h2{font-size:17px;margin-bottom:12px}
+.sub{color:var(--mut);font-size:13px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.grow{flex:1 1 240px}
+label.f{display:block;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+input[type=text],input[type=search],input[type=password],textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:#fff;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(15,91,74,.13)}
+input:disabled{background:var(--soft);color:var(--mut)}
+textarea{resize:vertical;min-height:64px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:11px;border:1.5px solid var(--g);background:#fff;color:var(--g);font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
+.btn:hover{background:var(--g3)}
+.btn.pri{background:var(--g);color:#fff}
+.btn.pri:hover{background:var(--g2)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.danger{border-color:#e6b9b3;color:var(--poor)}
+.btn.danger:hover{background:#fbeceA}
+.btn.lg{padding:14px 26px;font-size:16px}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:9px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.hide{display:none!important}
+
+/* combobox */
+.combo{position:relative}
+.combo ul{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;background:#fff;border:1.5px solid var(--g);border-radius:12px;list-style:none;margin:0;padding:4px;max-height:320px;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.combo li{padding:9px 11px;border-radius:8px;cursor:pointer;display:flex;gap:10px;align-items:baseline}
+.combo li.act,.combo li:hover{background:var(--g3)}
+.combo li b{min-width:44px;color:var(--g)}
+.combo li small{color:var(--mut);margin-left:auto;text-align:right}
+.combo li.none{color:var(--mut);cursor:default}
+
+/* details */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 18px;margin-top:4px}
+.dgrid .k{font-size:11.5px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.dgrid .v{font-weight:700;font-size:16px;word-break:break-word}
+.dgrid .wide{grid-column:1/-1}
+.minfo{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:800px){.minfo.has-map{grid-template-columns:1.5fr 1fr}}
+.mapbox{border-radius:12px;overflow:hidden;border:1px solid var(--line);min-height:190px;background:var(--soft)}
+.mapbox iframe{width:100%;height:100%;min-height:190px;border:0;display:block}
+.note{background:#fff7e3;border:1px solid #f0dca6;color:#7a5a10;border-radius:10px;padding:8px 12px;font-size:13px;margin-top:12px}
+
+/* session bar */
+.sbar{position:sticky;top:57px;z-index:25;background:var(--g2);color:#fff;border-radius:14px;padding:12px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;box-shadow:var(--sh);margin-bottom:16px}
+.sbar .t{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.sbar .m{font-size:12.5px;opacity:.85;line-height:1.3}
+.sbar .sp{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sbar .btn{border-color:#fff}
+.sbar .btn.pri{background:#fff;color:var(--g)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#9be2c0;margin-right:6px}
+.dot.sv{background:#ffd166}
+.dot.er{background:#ff7b6b}
+.prog{height:6px;background:rgba(255,255,255,.2);border-radius:6px;overflow:hidden;flex:1 1 100%}
+.prog i{display:block;height:100%;background:#d6ad62;width:0;transition:.25s}
+
+/* location cards */
+.loc{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.loc + .loc{margin-top:14px}
+.loc[data-c=Good]{border-left-color:var(--good)}.loc[data-c=Fair]{border-left-color:var(--fair)}
+.loc[data-c=Poor]{border-left-color:var(--poor)}.loc[data-c="N/A"]{border-left-color:var(--na)}
+.loc header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.loc .n{width:28px;height:28px;border-radius:50%;background:var(--g3);color:var(--g);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.loc h3{font-size:16px;flex:1}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:800;background:#eceae3;color:var(--mut)}
+.pill.Good{background:#dff1e6;color:var(--good)}.pill.Fair{background:#fcefd3;color:#9a6606}
+.pill.Poor{background:#f9dcd8;color:var(--poor)}.pill.NA{background:#e8ecef;color:#55616a}
+.conds{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.conds button{padding:11px 6px;border:1.5px solid var(--line);background:#fff;border-radius:10px;font-weight:700;cursor:pointer;color:var(--mut)}
+.conds button:hover{border-color:#bdb7a5}
+.conds button.on[data-v=Good]{background:var(--good);border-color:var(--good);color:#fff}
+.conds button.on[data-v=Fair]{background:var(--fair);border-color:var(--fair);color:#fff}
+.conds button.on[data-v=Poor]{background:var(--poor);border-color:var(--poor);color:#fff}
+.conds button.on[data-v="N/A"]{background:var(--na);border-color:var(--na);color:#fff}
+.photos{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.ph{position:relative;width:86px;height:86px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--soft)}
+.ph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block}
+.ph .x{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;cursor:pointer;line-height:1;font-size:14px}
+.ph.up{display:grid;place-items:center;color:var(--mut);font-size:11px;text-align:center}
+.ph.err{border-color:var(--poor);color:var(--poor)}
+.addph{width:86px;height:86px;border:2px dashed #b9c9c2;border-radius:10px;display:grid;place-items:center;text-align:center;color:var(--g);font-weight:700;font-size:12px;cursor:pointer;background:var(--g3);line-height:1.25}
+.addph:hover{border-color:var(--g)}
+.addph span{display:block;font-size:22px;line-height:1}
+.spin{width:18px;height:18px;border:2.5px solid #cfd8d4;border-top-color:var(--g);border-radius:50%;animation:sp .8s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* overview */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.stat .k{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:30px;font-weight:800;color:var(--g);line-height:1.15;margin-top:4px}
+.stat .s{font-size:12.5px;color:var(--mut)}
+.bar{height:6px;background:#ece8dc;border-radius:6px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--gold)}
+.latest{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:linear-gradient(135deg,var(--g) 0%,var(--g2) 100%);color:#fff;border:0}
+.latest .no{font-size:44px;font-weight:800;line-height:1;background:rgba(255,255,255,.12);border-radius:16px;padding:16px 20px;text-align:center;min-width:104px}
+.latest .no small{display:block;font-size:11px;font-weight:600;letter-spacing:.8px;opacity:.75;margin-bottom:4px}
+.latest h2{font-size:20px;margin-bottom:2px}
+.latest .meta{opacity:.9;font-size:13.5px;display:flex;gap:6px 16px;flex-wrap:wrap;margin:4px 0 10px}
+.latest .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.latest .btn{border-color:#fff;background:transparent;color:#fff}
+.latest .btn:hover{background:rgba(255,255,255,.14)}
+.latest .btn.pri{background:#fff;color:var(--g)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:800;background:rgba(255,255,255,.18)}
+.chip.c-Good{background:#dff1e6;color:var(--good)}.chip.c-Fair{background:#fcefd3;color:#9a6606}
+.chip.c-Poor{background:#f9dcd8;color:var(--poor)}.chip.c-NA{background:#e8ecef;color:#55616a}
+.chip.c-Un{background:#eee;color:#777}
+.vlist{margin-top:6px}
+.vrow{display:grid;grid-template-columns:70px 1.4fr 1.1fr 1fr auto;gap:10px 14px;align-items:center;padding:12px 4px;border-top:1px solid var(--line)}
+.vrow:first-child{border-top:0}
+.vrow .no{font-weight:800;color:var(--g);font-size:18px}
+.vrow .nm{font-weight:700}
+.vrow .sub{display:block}
+.vrow .acts{display:flex;gap:6px;justify-content:flex-end}
+.tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:#fff0c9;color:#8a6200;vertical-align:middle}
+.tag.done{background:var(--g3);color:var(--g)}
+@media(max-width:720px){
+  .vrow{grid-template-columns:56px 1fr;}
+  .vrow .acts{grid-column:1/-1;justify-content:flex-start}
+  .vrow > :nth-child(3),.vrow > :nth-child(4){grid-column:2}
+  .latest{grid-template-columns:1fr}
+  .latest .no{justify-self:start}
+}
+
+/* admin */
+.arow{display:flex;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.arow:first-child{border-top:0}
+.arow .idx{width:26px;color:var(--mut);font-weight:700;text-align:center}
+.arow input[type=text]{flex:1;min-width:0}
+.arow.off input[type=text]{color:var(--mut);text-decoration:line-through}
+.iconb{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:15px}
+.iconb:hover{border-color:var(--g);background:var(--g3)}
+.iconb[disabled]{opacity:.35;cursor:default}
+.sw{position:relative;width:44px;height:25px;flex:none}
+.sw input{display:none}
+.sw span{position:absolute;inset:0;background:#cdd3cf;border-radius:99px;cursor:pointer;transition:.15s}
+.sw span::after{content:"";position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;left:3px;top:3px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw input:checked + span{background:var(--g)}
+.sw input:checked + span::after{left:22px}
+
+.empty{text-align:center;color:var(--mut);padding:30px 10px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);background:#1d2623;color:#fff;padding:11px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:100;max-width:90vw;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--poor)}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:90;display:none;place-items:center;padding:16px}
+.lb.on{display:grid}
+.lb img{max-width:100%;max-height:100%;border-radius:8px}
+.setup{max-width:640px;margin:40px auto}
+.setup code{background:#f0ede4;padding:2px 6px;border-radius:5px}
+.done-card{text-align:center;padding:30px 18px}
+.done-card .tick{width:60px;height:60px;border-radius:50%;background:var(--g3);color:var(--g);display:grid;place-items:center;margin:0 auto 12px;font-size:30px}
+.done-card .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.lock{max-width:380px;margin:50px auto;text-align:center}
+body.landing .top,body.landing main{display:none}
+#landing{display:none;min-height:100vh;min-height:100dvh;align-items:center;justify-content:center;padding:24px 16px;background:radial-gradient(1200px 500px at 50% -10%,#1b7a63 0%,var(--g) 45%,var(--g2) 100%)}
+body.landing #landing{display:flex}
+.lcard{width:100%;max-width:400px;background:#fff;border-radius:20px;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.lcard .mark{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#d6ad62,#b8893b);display:grid;place-items:center;color:#0b4538;font-size:26px;margin:0 auto 14px}
+.lcard h1{font-size:21px;text-align:center}
+.lcard .sub{text-align:center;margin:4px 0 20px}
+.lcard input{margin-bottom:10px}
+.or{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:12px;font-weight:700;margin:16px 0}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.who{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cfe6de}
+.who button{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-weight:700;font-size:12px}
+.who button:hover{background:rgba(255,255,255,.25)}
+
+
+/* ---------- general touch/mobile polish ---------- */
+button,.addph,.combo li{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+nav .ic{display:none;font-style:normal}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+.ph,.addph{width:100%;height:auto;aspect-ratio:1/1}
+.who span{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media(max-width:720px){
+  body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  /* inputs at 16px stop iOS from zooming the page on focus */
+  input[type=text],input[type=search],input[type=password],textarea,select{font-size:16px}
+  .top{position:static;padding-top:env(safe-area-inset-top)}
+  .top-in{padding:10px 14px;gap:8px;flex-wrap:nowrap}
+  .brand{min-width:0}.brand small{display:none}
+  .who{margin-left:auto;min-width:0}
+  .who span{max-width:34vw;font-size:12px}
+  main{padding:14px 12px}
+  .card{padding:14px}
+  /* bottom tab bar */
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;gap:0;background:#fff;border-top:1px solid var(--line);
+      box-shadow:0 -4px 18px rgba(0,0,0,.08);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;color:var(--mut);font-size:11.5px;border-radius:12px}
+  nav button:hover{background:transparent}
+  nav button.on{background:var(--g3);color:var(--g)}
+  nav .ic{display:block;font-size:20px;line-height:1.1}
+  .toast{bottom:calc(88px + env(safe-area-inset-bottom))}
+  /* session bar */
+  .sbar{top:8px;padding:10px 12px;gap:8px}
+  .sbar .t{font-size:21px}
+  .sbar .sp{margin-left:0;width:100%;justify-content:space-between}
+  .sbar .sp .btn.pri{flex:1}
+  .sbar .btn{padding:9px 12px}
+  /* mosque picker + details */
+  .combo li{display:grid;grid-template-columns:48px 1fr;gap:1px 8px;padding:11px;align-items:baseline}
+  .combo li small{grid-column:2;margin-left:0;text-align:left}
+  .combo li.none{display:block}
+  .combo ul{max-height:50vh}
+  .dgrid{grid-template-columns:1fr 1fr;gap:12px}
+  #btn-start{width:100%}
+  #start-wrap .sub{display:block;margin:8px 0 0!important;text-align:center}
+  .mapbox,.mapbox iframe{min-height:170px}
+  /* location cards */
+  .loc{padding:14px 12px}
+  .loc h3{font-size:15px}
+  .conds{gap:6px}.conds button{padding:13px 2px}
+  .addph{font-size:11px}
+  /* overview */
+  .stat .v{font-size:26px}
+  .latest .no{font-size:36px;padding:12px 16px}
+  .latest .acts .btn{flex:1}
+  .vrow .acts .btn{padding:9px 16px}
+  /* admin: name on its own line, controls underneath */
+  .arow{flex-wrap:wrap;gap:8px 8px}
+  .arow .idx{display:none}
+  .arow input[type=text]{flex:1 1 100%}
+  .arow .iconb:first-of-type{margin-left:0}
+  .arow .sw{margin-left:auto}
+  .iconb{width:42px;height:42px}
+  #add-loc{width:100%}
+  .done-card .acts .btn{flex:1 1 40%}
+  .lcard{padding:24px 20px}
+}
+@media(max-width:380px){.dgrid{grid-template-columns:1fr}.conds button{font-size:13px}}
+</style>
+</head>
+<body>
+
+<section id="landing">
+  <div class="lcard">
+    <div class="mark">☪</div>
+    <h1>Fujairah Awqaf</h1>
+    <p class="sub">Soft Services Inspection</p>
+    <form id="login">
+      <input type="text" id="em" inputmode="email" autocomplete="username" placeholder="Email" aria-label="Email">
+      <input type="password" id="pw" autocomplete="current-password" placeholder="Password" aria-label="Password">
+      <button class="btn pri" id="li" style="width:100%">Sign in</button>
+    </form>
+    <div class="or">OR</div>
+    <button class="btn" id="guest" style="width:100%">Continue as guest</button>
+    <p class="sub" style="margin:14px 0 0;font-size:12px">Guests can record inspections and download reports. Managing locations needs an admin account.</p>
+  </div>
+</section>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><div class="mark">☪</div><div>Fujairah Awqaf<small>SOFT SERVICES INSPECTION</small></div></div>
+    <nav>
+      <button data-v="overview" class="on"><i class="ic">📊</i><span>Overview</span></button>
+      <button data-v="inspect"><i class="ic">📝</i><span>Inspection</span></button>
+      <button data-v="admin" class="hide" id="nav-admin"><i class="ic">⚙️</i><span>Admin</span></button>
+    </nav>
+    <div class="who"><span id="who-t"></span><button id="who-b"></button></div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= OVERVIEW ================= -->
+  <section id="v-overview" class="view on"></section>
+
+  <!-- ================= INSPECTION ================= -->
+  <section id="v-inspect" class="view">
+    <div id="pick-card" class="card">
+      <h2>1 · Select Mosque</h2>
+      <div class="row">
+        <div class="grow" style="flex-basis:340px">
+          <label class="f" for="mq-input">Mosque number or name</label>
+          <div class="combo">
+            <input type="text" id="mq-input" placeholder="Type to search — e.g. 306 or Hamza" autocomplete="off" role="combobox" aria-expanded="false">
+            <ul id="mq-list" class="hide" role="listbox"></ul>
+          </div>
+        </div>
+        <div class="grow" style="flex-basis:200px">
+          <label class="f" for="inspector">Inspector name (optional)</label>
+          <input type="text" id="inspector" placeholder="Your name" autocomplete="name">
+        </div>
+      </div>
+      <div id="open-note" class="note hide"></div>
+    </div>
+
+    <div id="detail-card" class="card hide">
+      <div id="detail-body"></div>
+      <div style="margin-top:18px" id="start-wrap">
+        <button class="btn pri lg" id="btn-start">▶ Start Activity</button>
+        <span class="sub" style="margin-left:10px">Start time is captured automatically.</span>
+      </div>
+    </div>
+
+    <div id="stage" class="hide">
+      <div class="sbar" id="sbar">
+        <div>
+          <div class="t" id="timer">00:00:00</div>
+          <div class="m" id="sbar-m"></div>
+        </div>
+        <div class="sp">
+          <span class="m"><i class="dot" id="sdot"></i><span id="stxt">Saved</span></span>
+          <button class="btn sm danger" id="btn-cancel" style="background:transparent;color:#ffb4aa;border-color:#ffb4aa">Discard</button>
+          <button class="btn pri" id="btn-finish">■ Finish Activity</button>
+        </div>
+        <div class="prog"><i id="progbar"></i></div>
+      </div>
+      <h2 style="margin:4px 2px 12px;font-size:17px">2 · Soft Service Scopes <span class="sub" id="progtxt"></span></h2>
+      <div id="locs"></div>
+    </div>
+
+    <div id="done" class="card done-card hide"></div>
+  </section>
+
+  <!-- ================= ADMIN ================= -->
+  <section id="v-admin" class="view"></section>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="lb" id="lb"><img alt=""></div>
+<input type="file" id="file-in" accept="image/*" multiple class="hide">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+/* =====================================================================
+   CONFIGURATION — fill these in before deploying
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: "",          // e.g. https://abcdxyz.supabase.co
+  SUPABASE_KEY: "",          // the "anon / public" key
+  UPLOAD_URL:   "",          // your Cloudflare Worker URL, e.g. https://awqaf-photos.yourname.workers.dev
+  UPLOAD_TOKEN: "",          // same value as the Worker's UPLOAD_TOKEN secret
+  TZ:           "Asia/Dubai" // time zone used for dates/times in the app and reports
+};
+/* ===================================================================== */
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const COND = ['Good', 'Fair', 'Poor', 'N/A'];
+const cls = c => c === 'N/A' ? 'NA' : (c || 'Un');
+
+/* ---------- date helpers (always shown in CONFIG.TZ) ---------- */
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-GB', {timeZone: CONFIG.TZ, day:'2-digit', month:'short', year:'numeric'}) : '—';
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', {timeZone: CONFIG.TZ, hour:'2-digit', minute:'2-digit', hour12:true}) : '—';
+const fmtDT = iso => iso ? fmtDate(iso) + ', ' + fmtTime(iso) : '—';
+const dayKey = iso => new Date(iso).toLocaleDateString('en-CA', {timeZone: CONFIG.TZ});
+function fmtDur(a, b) {
+  if (!a || !b) return '—';
+  const m = Math.max(0, Math.round((new Date(b) - new Date(a)) / 60000));
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+}
+
+let toastT;
+function toast(msg, err) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : '');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), err ? 5000 : 2600);
+}
+
+/* ---------- boot ---------- */
+const S = { mosques: [], locations: [], selected: null, visit: null, items: {}, order: [], timers: {}, uploads: 0, tick: null };
+let sb = null;
+
+if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_KEY) {
+  $('main').innerHTML = `<div class="card setup"><h2>Setup needed</h2>
+  <p>Open <code>index.html</code> and fill in <code>CONFIG.SUPABASE_URL</code> and <code>CONFIG.SUPABASE_KEY</code> near the top of the script, then redeploy.</p>
+  <p class="sub">See SETUP.md for the full steps.</p></div>`;
+} else {
+  sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+  init();
+}
+
+async function init() {
+  $$('nav button').forEach(b => b.onclick = () => go(b.dataset.v));
+  $('#inspector').value = localStorage.getItem('awqaf_inspector') || '';
+  try {
+    const {data, error} = await sb.from('mosques').select('*').order('sl_no');
+    if (error) throw error;
+    S.mosques = data.map(m => ({...m, _s: `${m.mosque_number} ${m.name} ${m.location || ''} ${m.zone || ''}`.toLowerCase()}));
+  } catch (e) { toast('Could not load mosque list: ' + (e.message || e), true); console.error(e); }
+  initCombo();
+  $('#btn-start').onclick = startVisit;
+  $('#btn-finish').onclick = finishVisit;
+  $('#btn-cancel').onclick = discardVisit;
+  $('#lb').onclick = () => $('#lb').classList.remove('on');
+  $('#login').onsubmit = async e => {
+    e.preventDefault(); const b = $('#li'); b.disabled = true;
+    const {data, error} = await sb.auth.signInWithPassword({email: $('#em').value.trim(), password: $('#pw').value});
+    b.disabled = false;
+    if (error) return toast(error.message, true);
+    sessionStorage.removeItem('awqaf_guest'); $('#pw').value = '';
+    enterApp(data.session);
+  };
+  $('#guest').onclick = () => { sessionStorage.setItem('awqaf_guest', '1'); enterApp(null); };
+  $('#who-b').onclick = signOut;
+  const {data: {session}} = await sb.auth.getSession();
+  if (session) enterApp(session);
+  else if (sessionStorage.getItem('awqaf_guest') === '1') enterApp(null);
+  else document.body.classList.add('landing');
+}
+
+async function enterApp(session) {
+  S.admin = false;
+  if (session) {
+    const {data} = await sb.from('admins').select('user_id').eq('user_id', session.user.id);
+    S.admin = !!(data && data.length);
+  }
+  $('#who-t').textContent = session ? session.user.email + (S.admin ? ' · Admin' : '') : 'Guest';
+  $('#who-b').textContent = session ? 'Sign out' : 'Sign in';
+  $('#nav-admin').classList.toggle('hide', !S.admin);
+  document.body.classList.remove('landing');
+  go(location.hash.slice(1) || 'overview');
+}
+
+async function signOut() {
+  if (S.visit && !confirm('An inspection is in progress (it is saved and can be resumed later). Leave now?')) return;
+  sessionStorage.removeItem('awqaf_guest');
+  await sb.auth.signOut();
+  location.hash = ''; location.reload();
+}
+
+function go(v) {
+  if (!['overview', 'inspect', 'admin'].includes(v) || (v === 'admin' && !S.admin)) v = 'overview';
+  $$('section.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  history.replaceState(null, '', '#' + v);
+  window.scrollTo(0, 0);
+  if (v === 'overview') loadOverview();
+  if (v === 'admin') renderAdmin();
+}
+
+/* =====================================================================
+   OVERVIEW
+   ===================================================================== */
+let OV = { visits: [], q: '', shown: 20 };
+
+async function loadOverview() {
+  const el = $('#v-overview');
+  if (!OV.visits.length) el.innerHTML = `<div class="empty"><span class="spin"></span></div>`;
+  const {data, error} = await sb.from('visits').select('*, visit_items(condition)').order('started_at', {ascending: false}).limit(500);
+  if (error) { el.innerHTML = `<div class="card empty">Could not load visits.<br><span class="sub">${esc(error.message)}</span></div>`; return; }
+  OV.visits = data;
+  renderOverview();
+}
+
+function tally(items) {
+  const t = {Good: 0, Fair: 0, Poor: 0, 'N/A': 0, Un: 0};
+  (items || []).forEach(i => t[i.condition || 'Un']++);
+  return t;
+}
+function chips(t) {
+  return ['Good', 'Fair', 'Poor', 'N/A'].filter(k => t[k]).map(k => `<span class="chip c-${cls(k)}">${t[k]} ${k}</span>`).join('');
+}
+
+function renderOverview() {
+  const V = OV.visits, el = $('#v-overview');
+  const today = dayKey(new Date().toISOString());
+  const covered = new Set(V.map(v => v.mosque_id ?? v.mosque_number)).size;
+  const total = S.mosques.length || 1;
+  const open = V.filter(v => v.status === 'in_progress').length;
+  const todayN = V.filter(v => dayKey(v.started_at) === today).length;
+  const last = V.find(v => v.status === 'completed') || V[0];
+
+  let latestHTML = `<div class="card empty">No inspections yet. Start one from the <b>Inspection</b> tab.</div>`;
+  if (last) {
+    const t = tally(last.visit_items), done = last.status === 'completed';
+    latestHTML = `<div class="card latest">
+      <div class="no"><small>MOSQUE NO.</small>${esc(last.mosque_number)}</div>
+      <div>
+        <div style="font-size:12px;letter-spacing:.8px;font-weight:700;opacity:.75">LATEST SITE VISIT</div>
+        <h2>${esc(last.mosque_name || '—')}</h2>
+        <div class="meta"><span>📅 ${fmtDate(last.started_at)}</span><span>🕒 ${fmtTime(last.started_at)} – ${done ? fmtTime(last.finished_at) : 'in progress'}</span>
+          ${done ? `<span>⏱ ${fmtDur(last.started_at, last.finished_at)}</span>` : ''}
+          <span>📍 ${esc(last.zone || '')}${last.location ? ' · ' + esc(last.location) : ''}</span>
+          ${last.inspector ? `<span>👤 ${esc(last.inspector)}</span>` : ''}</div>
+        <div class="chips">${chips(t) || '<span class="chip">No conditions recorded</span>'}</div>
+        <div class="acts">
+          ${done ? `<button class="btn pri" data-rep="pdf" data-id="${last.id}">⬇ Generate PDF Report</button>
+                    <button class="btn" data-rep="xlsx" data-id="${last.id}">⬇ Excel Report</button>`
+                 : `<button class="btn pri" data-resume="${last.id}">Resume inspection</button>`}
+        </div>
+      </div></div>`;
+  }
+
+  el.innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="k">Total inspections</div><div class="v">${V.length}</div><div class="s">${V.filter(v => v.status === 'completed').length} completed</div></div>
+      <div class="stat"><div class="k">Mosques covered</div><div class="v">${covered}<span style="font-size:16px;color:var(--mut)"> / ${S.mosques.length}</span></div><div class="bar"><i style="width:${Math.min(100, covered / total * 100)}%"></i></div></div>
+      <div class="stat"><div class="k">Visits today</div><div class="v">${todayN}</div><div class="s">${new Date().toLocaleDateString('en-GB', {timeZone: CONFIG.TZ, weekday: 'long', day: 'numeric', month: 'short'})}</div></div>
+      <div class="stat"><div class="k">In progress</div><div class="v">${open}</div><div class="s">${open ? 'tap Resume below' : 'all closed'}</div></div>
+    </div>
+    ${latestHTML}
+    <div class="card">
+      <div class="row" style="align-items:center;margin-bottom:4px">
+        <h2 style="margin:0;flex:1 1 200px">Site visits</h2>
+        <div style="flex:1 1 240px"><input type="search" id="ov-q" placeholder="Filter by mosque no. or name" value="${esc(OV.q)}"></div>
+      </div>
+      <div class="vlist" id="vlist"></div>
+    </div>`;
+  $('#ov-q').oninput = e => { OV.q = e.target.value; OV.shown = 20; renderVList(); };
+  renderVList();
+  bindActions(el);
+}
+
+function renderVList() {
+  const q = OV.q.trim().toLowerCase();
+  const list = OV.visits.filter(v => !q || `${v.mosque_number} ${v.mosque_name || ''}`.toLowerCase().includes(q));
+  const box = $('#vlist');
+  if (!list.length) { box.innerHTML = `<div class="empty">${OV.visits.length ? 'No matching visits.' : 'No visits recorded yet.'}</div>`; return; }
+  box.innerHTML = list.slice(0, OV.shown).map(v => {
+    const done = v.status === 'completed';
+    return `<div class="vrow">
+      <div class="no">${esc(v.mosque_number)}</div>
+      <div><span class="nm">${esc(v.mosque_name || '—')}</span> <span class="tag ${done ? 'done' : ''}">${done ? 'Completed' : 'In progress'}</span>
+        <span class="sub">${esc(v.zone || '')}${v.location ? ' · ' + esc(v.location) : ''}${v.inspector ? ' · ' + esc(v.inspector) : ''}</span></div>
+      <div>${fmtDate(v.started_at)}<span class="sub">${fmtTime(v.started_at)} – ${done ? fmtTime(v.finished_at) : '…'}${done ? ' · ' + fmtDur(v.started_at, v.finished_at) : ''}</span></div>
+      <div class="chips" style="--x:0">${chips(tally(v.visit_items)).replace(/chip c-/g, 'chip c-')}</div>
+      <div class="acts">${done
+        ? `<button class="btn sm" data-rep="pdf" data-id="${v.id}">PDF</button><button class="btn sm" data-rep="xlsx" data-id="${v.id}">Excel</button>`
+        : `<button class="btn sm pri" data-resume="${v.id}">Resume</button>`}</div>
+    </div>`;
+  }).join('') + (list.length > OV.shown ? `<div style="text-align:center;padding-top:12px"><button class="btn sm" id="more">Show more (${list.length - OV.shown})</button></div>` : '');
+  const more = $('#more'); if (more) more.onclick = () => { OV.shown += 20; renderVList(); bindActions(box); };
+  bindActions(box);
+}
+
+function bindActions(root) {
+  $$('[data-rep]', root).forEach(b => b.onclick = () => runReport(b, b.dataset.rep, b.dataset.id));
+  $$('[data-resume]', root).forEach(b => b.onclick = () => resumeVisit(b.dataset.resume));
+}
+
+/* =====================================================================
+   INSPECTION — mosque picker
+   ===================================================================== */
+function initCombo() {
+  const inp = $('#mq-input'), list = $('#mq-list');
+  let shown = [], idx = -1;
+
+  const render = () => {
+    const q = inp.value.trim().toLowerCase();
+    let arr = S.mosques;
+    if (q) {
+      arr = arr.filter(m => m._s.includes(q));
+      arr.sort((a, b) => (b.mosque_number.toLowerCase() === q) - (a.mosque_number.toLowerCase() === q)
+        || (b.mosque_number.toLowerCase().startsWith(q)) - (a.mosque_number.toLowerCase().startsWith(q)));
+    }
+    shown = arr.slice(0, 60); idx = shown.length && q ? 0 : -1;
+    list.innerHTML = shown.length ? shown.map((m, i) =>
+      `<li role="option" data-i="${i}" class="${i === idx ? 'act' : ''}"><b>${esc(m.mosque_number)}</b><span>${esc(m.name.trim())}</span><small>${[m.location, m.zone].filter(Boolean).map(esc).join(' · ')}</small></li>`).join('')
+      + (arr.length > 60 ? `<li class="none">…${arr.length - 60} more — keep typing to narrow down</li>` : '')
+      : `<li class="none">No mosque matches “${esc(inp.value)}”</li>`;
+    list.classList.remove('hide'); inp.setAttribute('aria-expanded', 'true');
+  };
+  const close = () => { list.classList.add('hide'); inp.setAttribute('aria-expanded', 'false'); };
+  const hi = () => $$('li', list).forEach((li, i) => { li.classList.toggle('act', i === idx); if (i === idx) li.scrollIntoView({block: 'nearest'}); });
+
+  inp.addEventListener('focus', () => { if (!S.visit) { inp.select(); render(); } });
+  inp.addEventListener('input', () => { if (S.selected && inp.value !== labelOf(S.selected)) clearSelection(true); render(); });
+  inp.addEventListener('keydown', e => {
+    if (list.classList.contains('hide') && e.key === 'ArrowDown') render();
+    if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(shown.length - 1, idx + 1); hi(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(0, idx - 1); hi(); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (shown[idx]) { pick(shown[idx]); close(); } }
+    else if (e.key === 'Escape') close();
+  });
+  list.addEventListener('mousedown', e => {
+    const li = e.target.closest('li[data-i]'); if (!li) return;
+    e.preventDefault(); pick(shown[+li.dataset.i]); close(); inp.blur();
+  });
+  document.addEventListener('mousedown', e => { if (!e.target.closest('.combo')) close(); });
+  inp.addEventListener('blur', () => setTimeout(close, 120));
+}
+const labelOf = m => `${m.mosque_number} — ${m.name.trim()}`;
+
+function mapsUrl(m) {
+  return m.maps_url || (m.latitude != null ? `https://www.google.com/maps?q=${m.latitude},${m.longitude}` : '');
+}
+
+async function pick(m) {
+  S.selected = m;
+  $('#mq-input').value = labelOf(m);
+  const url = mapsUrl(m), hasMap = m.latitude != null;
+  $('#detail-body').innerHTML = `<div class="minfo ${hasMap ? 'has-map' : ''}">
+    <div>
+      <div class="sub" style="font-weight:700;letter-spacing:.5px">MOSQUE DETAILS</div>
+      <h2 style="font-size:22px;margin:2px 0 12px">${esc(m.mosque_number)} · ${esc(m.name.trim())}</h2>
+      <div class="dgrid">
+        <div><div class="k">Mosque No.</div><div class="v">${esc(m.mosque_number)}</div></div>
+        <div><div class="k">Zone</div><div class="v">${esc(m.zone || '—')}</div></div>
+        <div><div class="k">Location</div><div class="v">${esc(m.location || '—')}</div></div>
+        <div><div class="k">Capacity</div><div class="v">${m.capacity != null ? Number(m.capacity).toLocaleString() : '—'}</div></div>
+        <div><div class="k">Avg. worshippers</div><div class="v">${m.avg_worshipers != null ? Number(m.avg_worshipers).toLocaleString() : '—'}</div></div>
+        <div><div class="k">Google Map</div><div class="v">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="btn sm">📍 Open in Maps</a>` : '<span class="sub">No coordinates on file</span>'}</div></div>
+      </div>
+      ${m.remarks ? `<div class="note">Master list note: <b>${esc(m.remarks)}</b></div>` : ''}
+    </div>
+    ${hasMap ? `<div class="mapbox"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map" src="https://maps.google.com/maps?q=${m.latitude},${m.longitude}&z=16&output=embed"></iframe></div>` : ''}
+  </div>`;
+  $('#detail-card').classList.remove('hide');
+  $('#done').classList.add('hide');
+  // warn if an unfinished visit exists for this mosque
+  const note = $('#open-note'); note.classList.add('hide');
+  const {data} = await sb.from('visits').select('id,started_at').eq('mosque_id', m.id).eq('status', 'in_progress').order('started_at', {ascending: false});
+  if (S.selected !== m) return;
+  if (data && data.length) {
+    note.innerHTML = `This mosque has an unfinished inspection started ${fmtDT(data[0].started_at)}. <button class="btn sm" id="note-resume" style="margin-left:6px">Resume it</button>`;
+    note.classList.remove('hide');
+    $('#note-resume').onclick = () => resumeVisit(data[0].id);
+  }
+}
+
+function clearSelection(keepText) {
+  S.selected = null;
+  $('#detail-card').classList.add('hide');
+  $('#open-note').classList.add('hide');
+  if (!keepText) $('#mq-input').value = '';
+}
+
+/* =====================================================================
+   INSPECTION — run a visit
+   ===================================================================== */
+async function loadActiveLocations() {
+  const {data, error} = await sb.from('locations').select('*').eq('active', true).order('sort_order').order('id');
+  if (error) throw error;
+  return data;
+}
+
+async function startVisit() {
+  const m = S.selected; if (!m) return;
+  const btn = $('#btn-start'); btn.disabled = true;
+  try {
+    const locs = await loadActiveLocations();
+    if (!locs.length) { toast('No locations configured. Add some in the Admin tab first.', true); btn.disabled = false; return; }
+    const inspector = $('#inspector').value.trim();
+    localStorage.setItem('awqaf_inspector', inspector);
+    const {data, error} = await sb.from('visits').insert({
+      mosque_id: m.id, mosque_number: m.mosque_number, mosque_name: m.name.trim(), zone: m.zone, location: m.location, inspector: inspector || null
+    }).select().single();
+    if (error) throw error;
+    S.visit = data;
+    S.order = locs.map((l, i) => ({key: 'l' + l.id, location_id: l.id, name: l.name, sort: i}));
+    S.items = {};
+    S.order.forEach(o => S.items[o.key] = {id: crypto.randomUUID(), condition: null, remarks: '', photos: [], up: 0, err: 0, saved: false});
+    enterStage();
+  } catch (e) { toast('Could not start: ' + (e.message || e), true); console.error(e); }
+  btn.disabled = false;
+}
+
+async function resumeVisit(id) {
+  try {
+    const [{data: v, error: e1}, {data: its, error: e2}, locs] = await Promise.all([
+      sb.from('visits').select('*').eq('id', id).single(),
+      sb.from('visit_items').select('*').eq('visit_id', id).order('sort_order'),
+      loadActiveLocations()
+    ]);
+    if (e1) throw e1; if (e2) throw e2;
+    S.visit = v; S.order = []; S.items = {};
+    const byLoc = new Map(its.filter(i => i.location_id != null).map(i => [i.location_id, i]));
+    const mk = (key, location_id, name, it) => {
+      S.order.push({key, location_id, name, sort: S.order.length});
+      S.items[key] = it ? {id: it.id, condition: it.condition, remarks: it.remarks || '', photos: it.photos || [], up: 0, err: 0, saved: true}
+                        : {id: crypto.randomUUID(), condition: null, remarks: '', photos: [], up: 0, err: 0, saved: false};
+    };
+    locs.forEach(l => mk('l' + l.id, l.id, l.name, byLoc.get(l.id)));
+    // saved items whose location was since removed/deactivated
+    its.filter(i => i.location_id == null || !locs.some(l => l.id === i.location_id)).forEach(i => mk('i' + i.id, i.location_id, i.location_name, i));
+    S.selected = S.mosques.find(m => m.id === v.mosque_id) || null;
+    $('#mq-input').value = `${v.mosque_number} — ${v.mosque_name || ''}`;
+    $('#inspector').value = v.inspector || '';
+    enterStage();
+    toast('Inspection resumed');
+  } catch (e) { toast('Could not resume: ' + (e.message || e), true); console.error(e); }
+}
+
+function enterStage() {
+  go('inspect');
+  $('#detail-card').classList.add('hide'); // keep screen focused; details stay in the session bar
+  $('#pick-card').classList.add('hide');
+  $('#done').classList.add('hide');
+  $('#stage').classList.remove('hide');
+  const v = S.visit;
+  $('#sbar-m').innerHTML = `<b>${esc(v.mosque_number)} · ${esc(v.mosque_name || '')}</b><br>Started ${fmtDT(v.started_at)}`;
+  renderLocs(); updateProgress();
+  clearInterval(S.tick);
+  const tickFn = () => {
+    const s = Math.max(0, Math.floor((Date.now() - new Date(v.started_at)) / 1000));
+    $('#timer').textContent = [s / 3600, s % 3600 / 60, s % 60].map(n => String(Math.floor(n)).padStart(2, '0')).join(':');
+  };
+  tickFn(); S.tick = setInterval(tickFn, 1000);
+  setSave('ok');
+  window.scrollTo(0, 0);
+}
+
+function renderLocs() {
+  $('#locs').innerHTML = S.order.map((o, i) => {
+    const it = S.items[o.key];
+    return `<article class="loc" data-k="${o.key}" data-c="${esc(it.condition || '')}">
+      <header><span class="n">${i + 1}</span><h3>${esc(o.name)}</h3><span class="pill ${cls(it.condition)}">${it.condition || 'Not assessed'}</span></header>
+      <div class="conds">${COND.map(c => `<button type="button" data-v="${c}" class="${it.condition === c ? 'on' : ''}">${c}</button>`).join('')}</div>
+      <div class="photos"></div>
+      <label class="f">Remarks</label>
+      <textarea placeholder="Comments about this location (optional)">${esc(it.remarks)}</textarea>
+    </article>`;
+  }).join('');
+  $$('.loc').forEach(card => {
+    const k = card.dataset.k, it = S.items[k];
+    $$('.conds button', card).forEach(b => b.onclick = () => {
+      it.condition = it.condition === b.dataset.v ? null : b.dataset.v;
+      $$('.conds button', card).forEach(x => x.classList.toggle('on', x.dataset.v === it.condition));
+      card.dataset.c = it.condition || '';
+      const p = $('.pill', card); p.className = 'pill ' + cls(it.condition); p.textContent = it.condition || 'Not assessed';
+      updateProgress(); queueSave(k);
+    });
+    $('textarea', card).oninput = e => { it.remarks = e.target.value; queueSave(k); };
+    renderPhotos(k);
+  });
+}
+
+function renderPhotos(k) {
+  const card = $(`.loc[data-k="${k}"]`); if (!card) return;
+  const it = S.items[k], box = $('.photos', card);
+  box.innerHTML = it.photos.map((u, i) => `<div class="ph"><img src="${esc(u)}" alt="Photo ${i + 1}" loading="lazy" data-full="${esc(u)}"><button class="x" type="button" data-rm="${i}" aria-label="Remove photo">×</button></div>`).join('')
+    + Array.from({length: it.up}, () => `<div class="ph up"><span class="spin"></span></div>`).join('')
+    + (it.err ? `<div class="ph up err">${it.err} failed<br>retry</div>` : '')
+    + `<div class="addph" role="button" tabindex="0"><div><span>＋</span>Add photos</div></div>`;
+  $$('img', box).forEach(im => im.onclick = () => { $('#lb img').src = im.dataset.full; $('#lb').classList.add('on'); });
+  $$('[data-rm]', box).forEach(b => b.onclick = () => {
+    if (!confirm('Remove this photo?')) return;
+    it.photos.splice(+b.dataset.rm, 1); renderPhotos(k); queueSave(k);
+  });
+  const add = $('.addph', box);
+  const open = () => { it.err = 0; pickFiles(k); };
+  add.onclick = open; add.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') open(); };
+  const er = $('.ph.err', box); if (er) er.onclick = open;
+}
+
+function pickFiles(k) {
+  const fi = $('#file-in'); fi.value = '';
+  fi.onchange = () => { const files = [...fi.files]; if (files.length) uploadFiles(k, files); };
+  fi.click();
+}
+
+/* ---------- photo handling: compress in browser, upload to Cloudflare ---------- */
+function compress(file, max = 1600, q = 0.8) {
+  return new Promise((res, rej) => {
+    const img = new Image(), u = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u);
+      c.toBlob(b => b ? res(b) : rej(new Error('compress failed')), 'image/jpeg', q);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Not a readable image')); };
+    img.src = u;
+  });
+}
+
+async function uploadOne(blob) {
+  if (!CONFIG.UPLOAD_URL) throw new Error('UPLOAD_URL is not configured');
+  const r = await fetch(`${CONFIG.UPLOAD_URL.replace(/\/$/, '')}/upload?visit=${S.visit.id}`, {
+    method: 'POST', headers: {'Authorization': 'Bearer ' + CONFIG.UPLOAD_TOKEN, 'Content-Type': 'image/jpeg'}, body: blob
+  });
+  if (!r.ok) throw new Error('Upload failed (' + r.status + ')');
+  return (await r.json()).url;
+}
+
+async function uploadFiles(k, files) {
+  const it = S.items[k];
+  it.up += files.length; S.uploads += files.length; renderPhotos(k); updateFinish();
+  await Promise.all(files.map(async f => {
+    try { const url = await uploadOne(await compress(f)); it.photos.push(url); }
+    catch (e) { it.err++; toast('Photo upload failed: ' + e.message, true); console.error(e); }
+    finally { it.up--; S.uploads--; renderPhotos(k); updateFinish(); }
+  }));
+  queueSave(k);
+}
+
+/* ---------- autosave ---------- */
+function setSave(s) {
+  const d = $('#sdot'), t = $('#stxt');
+  d.className = 'dot' + (s === 'saving' ? ' sv' : s === 'err' ? ' er' : '');
+  t.textContent = s === 'saving' ? 'Saving…' : s === 'err' ? 'Not saved – retrying on next change' : 'All changes saved';
+}
+function queueSave(k) {
+  setSave('saving'); clearTimeout(S.timers[k]);
+  S.timers[k] = setTimeout(() => saveItem(k), 500);
+}
+async function saveItem(k) {
+  clearTimeout(S.timers[k]); delete S.timers[k];
+  const it = S.items[k], o = S.order.find(x => x.key === k);
+  const {error} = await sb.from('visit_items').upsert({
+    id: it.id, visit_id: S.visit.id, location_id: o.location_id, location_name: o.name, sort_order: o.sort,
+    condition: it.condition, remarks: it.remarks.trim() || null, photos: it.photos, updated_at: new Date().toISOString()
+  });
+  if (error) { setSave('err'); toast('Save failed: ' + error.message, true); return false; }
+  it.saved = true;
+  if (!Object.keys(S.timers).length) setSave('ok');
+  return true;
+}
+function updateProgress() {
+  const n = S.order.filter(o => S.items[o.key].condition).length, t = S.order.length;
+  $('#progbar').style.width = (t ? n / t * 100 : 0) + '%';
+  $('#progtxt').textContent = `— ${n} of ${t} assessed`;
+}
+function updateFinish() { $('#btn-finish').disabled = S.uploads > 0; $('#btn-finish').textContent = S.uploads > 0 ? 'Uploading photos…' : '■ Finish Activity'; }
+
+async function finishVisit() {
+  const missing = S.order.filter(o => !S.items[o.key].condition);
+  if (missing.length && !confirm(`${missing.length} location(s) have no condition set:\n\n• ${missing.map(o => o.name).join('\n• ')}\n\nFinish anyway?`)) return;
+  const btn = $('#btn-finish'); btn.disabled = true; btn.textContent = 'Finishing…';
+  try {
+    // make sure every location row exists (even untouched) and nothing is pending
+    const ok = await Promise.all(S.order.map(o => saveItem(o.key)));
+    if (ok.includes(false)) throw new Error('Some items could not be saved');
+    const finished = new Date().toISOString();
+    const {data, error} = await sb.from('visits').update({finished_at: finished, status: 'completed'}).eq('id', S.visit.id).select().single();
+    if (error) throw error;
+    clearInterval(S.tick);
+    showDone(data);
+  } catch (e) { toast('Could not finish: ' + (e.message || e), true); console.error(e); updateFinish(); }
+}
+
+function showDone(v) {
+  const t = tally(S.order.map(o => S.items[o.key]));
+  $('#stage').classList.add('hide');
+  const d = $('#done'); d.classList.remove('hide');
+  d.innerHTML = `<div class="tick">✓</div><h2 style="font-size:22px">Inspection completed</h2>
+    <p class="sub" style="margin:6px 0 12px"><b>${esc(v.mosque_number)} · ${esc(v.mosque_name || '')}</b><br>${fmtDate(v.started_at)} · ${fmtTime(v.started_at)} – ${fmtTime(v.finished_at)} · ${fmtDur(v.started_at, v.finished_at)}</p>
+    <div class="chips" style="justify-content:center">${chips(t)}</div>
+    <div class="acts"><button class="btn pri" data-rep="pdf" data-id="${v.id}">⬇ PDF Report</button><button class="btn" data-rep="xlsx" data-id="${v.id}">⬇ Excel Report</button>
+    <button class="btn" id="btn-new">New inspection</button><button class="btn" id="btn-ov">Overview</button></div>`;
+  bindActions(d);
+  $('#btn-new').onclick = resetInspection;
+  $('#btn-ov').onclick = () => { resetInspection(); go('overview'); };
+  S.visit = null;
+  window.scrollTo(0, 0);
+}
+
+function resetInspection() {
+  S.visit = null; S.items = {}; S.order = []; clearInterval(S.tick);
+  $('#stage').classList.add('hide'); $('#done').classList.add('hide'); $('#pick-card').classList.remove('hide');
+  clearSelection(); $('#mq-input').disabled = false;
+  window.scrollTo(0, 0);
+}
+
+async function discardVisit() {
+  if (!confirm('Discard this inspection? Everything recorded for this visit will be deleted.')) return;
+  const {error} = await sb.from('visits').delete().eq('id', S.visit.id);
+  if (error) return toast('Could not discard: ' + error.message, true);
+  Object.values(S.timers).forEach(clearTimeout); S.timers = {};
+  resetInspection(); toast('Inspection discarded'); go('overview');
+}
+
+window.addEventListener('beforeunload', e => { if (S.visit && (S.uploads > 0 || Object.keys(S.timers).length)) { e.preventDefault(); e.returnValue = ''; } });
+
+/* =====================================================================
+   ADMIN — manage location list
+   ===================================================================== */
+let AD = { rows: [] };
+
+async function renderAdmin() {
+  const el = $('#v-admin');
+  if (!S.admin) return go('overview');
+  el.innerHTML = `<div class="card">
+    <div class="row" style="align-items:center;margin-bottom:6px"><div style="flex:1 1 240px"><h2 style="margin:0">Soft service locations</h2>
+      <div class="sub">These appear, in this order, on every new inspection. Past reports keep the name they had at the time.</div></div></div>
+    <div class="row" style="margin:14px 0 6px"><div class="grow"><input type="text" id="new-loc" placeholder="New location name, e.g. Roof & Water Tanks"></div><button class="btn pri" id="add-loc">＋ Add location</button></div>
+    <div id="alist"><div class="empty"><span class="spin"></span></div></div></div>`;
+  $('#add-loc').onclick = addLoc; $('#new-loc').onkeydown = e => e.key === 'Enter' && addLoc();
+  loadAdmin();
+}
+
+async function loadAdmin() {
+  const {data, error} = await sb.from('locations').select('*').order('sort_order').order('id');
+  if (error) { $('#alist').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  AD.rows = data; drawAdmin();
+}
+
+function drawAdmin() {
+  const box = $('#alist');
+  if (!AD.rows.length) { box.innerHTML = '<div class="empty">No locations yet — add the first one above.</div>'; return; }
+  box.innerHTML = AD.rows.map((r, i) => `<div class="arow ${r.active ? '' : 'off'}" data-id="${r.id}">
+    <span class="idx">${i + 1}</span>
+    <input type="text" value="${esc(r.name)}" data-name maxlength="80" aria-label="Location name">
+    <button class="iconb" data-up ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
+    <button class="iconb" data-dn ${i === AD.rows.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
+    <label class="sw" title="${r.active ? 'Active' : 'Hidden'}"><input type="checkbox" data-act ${r.active ? 'checked' : ''}><span></span></label>
+    <button class="iconb" data-del title="Delete">🗑</button></div>`).join('');
+  $$('.arow', box).forEach(row => {
+    const id = +row.dataset.id, r = AD.rows.find(x => x.id === id), i = AD.rows.indexOf(r);
+    $('[data-name]', row).onchange = async e => {
+      const v = e.target.value.trim(); if (!v) { e.target.value = r.name; return; }
+      const {error} = await sb.from('locations').update({name: v}).eq('id', id);
+      if (error) return toast(error.message, true); r.name = v; toast('Renamed');
+    };
+    $('[data-act]', row).onchange = async e => {
+      const {error} = await sb.from('locations').update({active: e.target.checked}).eq('id', id);
+      if (error) return toast(error.message, true); r.active = e.target.checked; drawAdmin();
+    };
+    $('[data-up]', row).onclick = () => move(i, -1);
+    $('[data-dn]', row).onclick = () => move(i, 1);
+    $('[data-del]', row).onclick = async () => {
+      if (!confirm(`Delete “${r.name}”?\n\nPast inspection reports keep their recorded results. To just hide it from new inspections, use the switch instead.`)) return;
+      const {error} = await sb.from('locations').delete().eq('id', id);
+      if (error) return toast(error.message, true); AD.rows.splice(i, 1); drawAdmin(); toast('Deleted');
+    };
+  });
+}
+
+async function move(i, d) {
+  const j = i + d; if (j < 0 || j >= AD.rows.length) return;
+  [AD.rows[i], AD.rows[j]] = [AD.rows[j], AD.rows[i]];
+  AD.rows.forEach((r, n) => r.sort_order = n + 1);
+  drawAdmin();
+  const {error} = await sb.from('locations').upsert(AD.rows.map(r => ({id: r.id, name: r.name, active: r.active, sort_order: r.sort_order})));
+  if (error) { toast(error.message, true); loadAdmin(); }
+}
+
+async function addLoc() {
+  const inp = $('#new-loc'), name = inp.value.trim(); if (!name) return inp.focus();
+  const next = AD.rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 1;
+  const {data, error} = await sb.from('locations').insert({name, sort_order: next}).select().single();
+  if (error) return toast(error.message, true);
+  AD.rows.push(data); inp.value = ''; drawAdmin(); toast('Location added');
+}
+
+/* =====================================================================
+   REPORTS (PDF / Excel)
+   ===================================================================== */
+async function runReport(btn, kind, id) {
+  const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  try {
+    const [{data: v, error: e1}, {data: items, error: e2}] = await Promise.all([
+      sb.from('visits').select('*').eq('id', id).single(),
+      sb.from('visit_items').select('*').eq('visit_id', id).order('sort_order')
+    ]);
+    if (e1) throw e1; if (e2) throw e2;
+    toast('Preparing report…');
+    const photos = await preloadPhotos(items);
+    const name = `Mosque-${v.mosque_number}_${dayKey(v.started_at)}_${fmtTime(v.started_at).replace(/[: ]/g, '').toLowerCase()}`;
+    if (kind === 'pdf') savePDF(v, items, photos, name + '.pdf'); else await saveXLSX(v, items, photos, name + '.xlsx');
+    toast('Report ready');
+  } catch (e) { toast('Report failed: ' + (e.message || e), true); console.error(e); }
+  btn.disabled = false; btn.innerHTML = old;
+}
+
+/* fetch every photo once, normalise to a JPEG data URL with dimensions */
+async function preloadPhotos(items) {
+  const urls = [...new Set(items.flatMap(i => i.photos || []))], map = {};
+  let n = 0;
+  const work = async () => {
+    while (n < urls.length) {
+      const u = urls[n++];
+      try {
+        const blob = await (await fetch(u, {mode: 'cors'})).blob();
+        const bmp = await createImageBitmap(blob);
+        const r = Math.min(1, 1100 / Math.max(bmp.width, bmp.height));
+        const c = document.createElement('canvas'); c.width = Math.round(bmp.width * r); c.height = Math.round(bmp.height * r);
+        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+        map[u] = {data: c.toDataURL('image/jpeg', 0.8), w: c.width, h: c.height};
+      } catch (e) { console.warn('photo failed', u, e); map[u] = null; }
+    }
+  };
+  await Promise.all(Array.from({length: Math.min(4, urls.length)}, work));
+  return map;
+}
+
+function download(blob, filename) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+const pdfSafe = s => String(s ?? '').replace(/[ʻʿ‘’`´]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-')
+  .replace(/[^\x09\x0A\x20-\x7E -ÿ]/g, '?');
+const COL = {Good: [46, 125, 79], Fair: [217, 149, 26], Poor: [192, 57, 43], 'N/A': [123, 135, 145], none: [150, 150, 150]};
+
+function savePDF(v, items, photos, filename) {
+  const doc = new jspdf.jsPDF({unit: 'mm', format: 'a4'});
+  const W = 210, H = 297, M = 14, FOOT = 14;
+  let y = 0;
+  const T = (s, x, yy, o) => doc.text(pdfSafe(s), x, yy, o);
+
+  // header band
+  doc.setFillColor(15, 91, 74); doc.rect(0, 0, W, 30, 'F');
+  doc.setFillColor(184, 137, 59); doc.rect(0, 30, W, 1.2, 'F');
+  doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+  T('Soft Services Inspection Report', M, 14);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(214, 235, 227);
+  T('Fujairah Awqaf Project', M, 21.5);
+  doc.setFontSize(9); T('Generated ' + fmtDT(new Date().toISOString()), M, 26.5);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.setTextColor(255);
+  T('No. ' + v.mosque_number, W - M, 19, {align: 'right'});
+  y = 40;
+
+  // info panel
+  const done = v.status === 'completed';
+  const info = [
+    ['Mosque Number', v.mosque_number], ['Mosque Name', v.mosque_name || '-'],
+    ['Zone', v.zone || '-'], ['Location', v.location || '-'],
+    ['Inspection Date', fmtDate(v.started_at)], ['Time', `${fmtTime(v.started_at)}  -  ${done ? fmtTime(v.finished_at) : 'in progress'}`],
+    ['Duration', done ? fmtDur(v.started_at, v.finished_at) : '-'], ['Inspector', v.inspector || '-']
+  ];
+  const colW = (W - 2 * M - 8) / 2;
+  const heights = [];
+  for (let r = 0; r < 4; r++) {
+    const l = doc.splitTextToSize(pdfSafe(info[r * 2][1]), colW - 6).length, rr = doc.splitTextToSize(pdfSafe(info[r * 2 + 1][1]), colW - 6).length;
+    heights.push(6 + Math.max(l, rr) * 5 + 2);
+  }
+  const panelH = heights.reduce((a, b) => a + b, 0) + 4;
+  doc.setFillColor(248, 246, 240); doc.setDrawColor(227, 222, 210); doc.roundedRect(M, y, W - 2 * M, panelH, 2.5, 2.5, 'FD');
+  let py = y + 4;
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 2; c++) {
+      const [k, val] = info[r * 2 + c], x = M + 5 + c * (colW + 8);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(110, 120, 115); T(k.toUpperCase(), x, py + 3.5);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(29, 38, 35);
+      doc.text(doc.splitTextToSize(pdfSafe(val), colW - 6), x, py + 8.5);
+    }
+    py += heights[r];
+  }
+  y += panelH + 7;
+
+  // summary chips
+  const t = tally(items);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 38, 35); T('Summary', M, y + 3);
+  let cx = M + 22;
+  [['Good', t.Good], ['Fair', t.Fair], ['Poor', t.Poor], ['N/A', t['N/A']], ['Not assessed', t.Un]].forEach(([k, n]) => {
+    if (!n) return;
+    const c = COL[k] || COL.none, label = `${n} ${k}`, w = doc.getTextWidth(label) + 8;
+    doc.setFillColor(...c); doc.roundedRect(cx, y - 1.5, w, 6.5, 3.2, 3.2, 'F');
+    doc.setTextColor(255); doc.setFontSize(8.5); T(label, cx + 4, y + 3); cx += w + 3;
+  });
+  doc.setFont('helvetica', 'bold'); y += 12;
+  doc.setDrawColor(227, 222, 210); doc.line(M, y - 3, W - M, y - 3);
+
+  // locations
+  const pw = (W - 2 * M - 8) / 3, ph = 44;
+  items.forEach((it, idx) => {
+    const remarks = it.remarks ? doc.splitTextToSize(pdfSafe(it.remarks), W - 2 * M - 8) : [];
+    const need = 11 + (remarks.length ? remarks.length * 4.6 + 3 : 0) + ((it.photos || []).length ? ph + 4 : 0);
+    if (y + need > H - FOOT) { doc.addPage(); y = 16; }
+    const c = COL[it.condition || 'none'];
+    // heading bar
+    doc.setFillColor(248, 246, 240); doc.rect(M, y, W - 2 * M, 9, 'F');
+    doc.setFillColor(...c); doc.rect(M, y, 1.8, 9, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(29, 38, 35);
+    T(`${idx + 1}.  ${it.location_name}`, M + 5, y + 6.1);
+    const lab = it.condition || 'Not assessed', lw = doc.getTextWidth(lab) + 9;
+    doc.setFillColor(...c); doc.roundedRect(W - M - lw - 2, y + 1.5, lw, 6, 3, 3, 'F');
+    doc.setTextColor(255); doc.setFontSize(8.5); T(lab, W - M - lw - 2 + 4.5, y + 5.7);
+    y += 13;
+    // remarks
+    if (remarks.length) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(110, 120, 115); T('REMARKS', M + 4, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 48, 45);
+      remarks.forEach((ln, i) => { if (y + 4.6 > H - FOOT) { doc.addPage(); y = 16; } doc.text(ln, M + 4, y + 4.4 + i * 0 ); y += 4.6; });
+      y += 3;
+    }
+    // photos
+    const ps = it.photos || [];
+    for (let i = 0; i < ps.length; i += 3) {
+      if (y + ph > H - FOOT) { doc.addPage(); y = 16; }
+      ps.slice(i, i + 3).forEach((u, j) => {
+        const x = M + 4 + j * (pw + 4), p = photos[u];
+        doc.setDrawColor(227, 222, 210); doc.setFillColor(250, 249, 245); doc.roundedRect(x, y, pw, ph, 1.5, 1.5, 'FD');
+        if (p) {
+          const s = Math.min((pw - 2) / p.w, (ph - 2) / p.h), w = p.w * s, h = p.h * s;
+          doc.addImage(p.data, 'JPEG', x + (pw - w) / 2, y + (ph - h) / 2, w, h, undefined, 'FAST');
+        } else { doc.setFontSize(8); doc.setTextColor(150); doc.setFont('helvetica', 'normal'); T('Photo unavailable', x + pw / 2, y + ph / 2, {align: 'center'}); }
+      });
+      y += ph + 4;
+    }
+    y += 5;
+  });
+
+  // footer on every page
+  const n = doc.getNumberOfPages();
+  for (let p = 1; p <= n; p++) {
+    doc.setPage(p); doc.setDrawColor(227, 222, 210); doc.line(M, H - 11, W - M, H - 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120);
+    T(`Mosque ${v.mosque_number}  |  ${fmtDate(v.started_at)}`, M, H - 6.5);
+    T(`Page ${p} of ${n}`, W - M, H - 6.5, {align: 'right'});
+  }
+  doc.save(filename);
+}
+
+async function saveXLSX(v, items, photos, filename) {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Fujairah Awqaf Inspection'; wb.created = new Date();
+  const ws = wb.addWorksheet('Inspection Report', {views: [{showGridLines: false}], pageSetup: {orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0}});
+  const NPH = Math.max(3, ...items.map(i => (i.photos || []).length));
+  const widths = [6, 30, 15, 44, ...Array(Math.min(NPH, 12)).fill(24)];
+  widths.forEach((w, i) => ws.getColumn(i + 1).width = w);
+  const lastCol = widths.length;
+  const GREEN = 'FF0F5B4A', SAND = 'FFF8F6F0';
+  const argb = {Good: 'FF2E7D4F', Fair: 'FFD9951A', Poor: 'FFC0392B', 'N/A': 'FF7B8791'};
+
+  ws.mergeCells(1, 1, 1, lastCol);
+  const t = ws.getCell(1, 1); t.value = 'Fujairah Awqaf Project - Soft Services Inspection Report';
+  t.font = {bold: true, size: 16, color: {argb: 'FFFFFFFF'}}; t.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: GREEN}};
+  t.alignment = {vertical: 'middle', indent: 1}; ws.getRow(1).height = 34;
+
+  const done = v.status === 'completed';
+  const info = [
+    ['Mosque Number', v.mosque_number], ['Mosque Name', v.mosque_name || ''],
+    ['Zone', v.zone || ''], ['Location', v.location || ''],
+    ['Inspection Date', fmtDate(v.started_at)], ['Start Time', fmtTime(v.started_at)],
+    ['Finish Time', done ? fmtTime(v.finished_at) : 'In progress'], ['Duration', done ? fmtDur(v.started_at, v.finished_at) : ''],
+    ['Inspector', v.inspector || '']
+  ];
+  let r = 3;
+  info.forEach(([k, val]) => {
+    ws.mergeCells(r, 2, r, 3); ws.mergeCells(r, 4, r, 5);
+    const a = ws.getCell(r, 2), b = ws.getCell(r, 4);
+    a.value = k; a.font = {bold: true, color: {argb: 'FF68746F'}}; a.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: SAND}};
+    b.value = val; b.font = {bold: true}; b.alignment = {horizontal: 'left'};
+    r++;
+  });
+  ws.getCell(3, 4).numFmt = '@'; // keep mosque number as text
+  r += 1;
+  const tl = tally(items);
+  ws.getCell(r, 2).value = 'Summary'; ws.getCell(r, 2).font = {bold: true};
+  ws.getCell(r, 4).value = `Good: ${tl.Good}   Fair: ${tl.Fair}   Poor: ${tl.Poor}   N/A: ${tl['N/A']}   Not assessed: ${tl.Un}`;
+  r += 2;
+
+  const hr = r;
+  ['#', 'Location', 'Status', 'Remarks', 'Photos'].forEach((h, i) => {
+    const c = ws.getCell(hr, i + 1); c.value = h; c.font = {bold: true, color: {argb: 'FFFFFFFF'}};
+    c.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: GREEN}}; c.alignment = {vertical: 'middle', indent: 1};
+  });
+  if (lastCol > 5) { ws.mergeCells(hr, 5, hr, lastCol); }
+  ws.getRow(hr).height = 24;
+  const bd = {style: 'thin', color: {argb: 'FFE3DED2'}};
+  r = hr + 1;
+  for (const [i, it] of items.entries()) {
+    const row = ws.getRow(r), ps = it.photos || [];
+    row.getCell(1).value = i + 1;
+    row.getCell(2).value = it.location_name; row.getCell(2).font = {bold: true};
+    const sc = row.getCell(3); sc.value = it.condition || 'Not assessed';
+    sc.alignment = {horizontal: 'center', vertical: 'middle'};
+    sc.font = {bold: true, color: {argb: 'FFFFFFFF'}}; sc.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: argb[it.condition] || 'FF969696'}};
+    row.getCell(4).value = it.remarks || ''; row.getCell(4).alignment = {wrapText: true, vertical: 'top'};
+    [1, 2].forEach(c => row.getCell(c).alignment = {vertical: 'top', wrapText: true, horizontal: c === 1 ? 'center' : 'left'});
+    row.height = ps.length ? 118 : Math.max(30, 15 * Math.ceil((it.remarks || '').length / 48));
+    for (let c = 1; c <= lastCol; c++) row.getCell(c).border = {top: bd, bottom: bd, left: c <= 4 ? bd : undefined};
+    ps.slice(0, 12).forEach((u, j) => {
+      const p = photos[u];
+      if (!p) { row.getCell(5 + j).value = 'Photo unavailable'; return; }
+      const s = Math.min(160 / p.w, 118 / p.h), w = Math.round(p.w * s), h = Math.round(p.h * s);
+      const id = wb.addImage({base64: p.data, extension: 'jpeg'});
+      ws.addImage(id, {tl: {col: 4 + j + 0.06, row: r - 1 + 0.06}, ext: {width: w, height: h}});
+    });
+    r++;
+  }
+  const buf = await wb.xlsx.writeBuffer();
+  download(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), filename);
+}
+</script>
+</body>
+</html>
