@@ -40,7 +40,7 @@ section.view.on{display:block}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
 .grow{flex:1 1 240px}
 label.f{display:block;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-input[type=text],input[type=search],input[type=password],textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:#fff;outline:none}
+input[type=text],input[type=search],input[type=password],input[type=date],textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:#fff;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(15,91,74,.13)}
 input:disabled{background:var(--soft);color:var(--mut)}
 textarea{resize:vertical;min-height:64px}
@@ -211,7 +211,7 @@ nav .ic{display:none;font-style:normal}
 @media(max-width:720px){
   body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
   /* inputs at 16px stop iOS from zooming the page on focus */
-  input[type=text],input[type=search],input[type=password],textarea,select{font-size:16px}
+  input[type=text],input[type=search],input[type=password],input[type=date],textarea,select{font-size:16px}
   .top{position:static;padding-top:env(safe-area-inset-top)}
   .top-in{padding:10px 14px;gap:8px;flex-wrap:nowrap}
   .brand{min-width:0}.brand small{display:none}
@@ -264,6 +264,16 @@ nav .ic{display:none;font-style:normal}
   .lcard{padding:24px 20px}
 }
 @media(max-width:380px){.dgrid{grid-template-columns:1fr}.conds button{font-size:13px}}
+
+.errbox{background:#fdecea;border:1px solid #f1b9b2;color:#8f2418;border-radius:10px;padding:10px 13px;font-size:13.5px;margin:10px 0}
+.errbox code{background:#fff;padding:1px 5px;border-radius:4px;font-size:12px;word-break:break-all}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 8px}
+.pre{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.pre button{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;font-size:12.5px;font-weight:700;color:var(--g);cursor:pointer}
+.pre button:hover{border-color:var(--g);background:var(--g3)}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;margin:6px 0}
+.chk input{width:18px;height:18px;accent-color:var(--g)}
+.rcount{font-weight:700;color:var(--g);min-height:22px;margin:4px 0 12px}
 </style>
 </head>
 <body>
@@ -280,7 +290,7 @@ nav .ic{display:none;font-style:normal}
     </form>
     <div class="or">OR</div>
     <button class="btn" id="guest" style="width:100%">Continue as guest</button>
-    <p class="sub" style="margin:14px 0 0;font-size:12px">Guests can record inspections and download reports. Managing locations needs an admin account.</p>
+    <p class="sub" style="margin:14px 0 0;font-size:12px">Guests can record inspections. Reports and managing locations need an admin account.</p>
   </div>
 </section>
 
@@ -364,11 +374,14 @@ nav .ic{display:none;font-style:normal}
    CONFIGURATION — fill these in before deploying
    ===================================================================== */
 const CONFIG = {
-  SUPABASE_URL: "https://bymdxtlbtcvsoqfcmbaa.supabase.co",          // e.g. https://abcdxyz.supabase.co
-  SUPABASE_KEY: "sb_publishable_VoSR6DTp6pwLwQ0V6xEuXA_QKl6CF_0",          // the "anon / public" key
-  UPLOAD_URL:   "https://awqaf-photos.azzurro-reports.workers.dev",          // your Cloudflare Worker URL, e.g. https://awqaf-photos.yourname.workers.dev
-  UPLOAD_TOKEN: "qaviXCLIbdLGocNBDIfAInaUjQAsrtjc",          // same value as the Worker's UPLOAD_TOKEN secret
-  TZ:           "Asia/Dubai" // time zone used for dates/times in the app and reports
+  SUPABASE_URL: "",          // e.g. https://abcdxyz.supabase.co
+  SUPABASE_KEY: "",          // the "anon / public" key
+  UPLOAD_URL:   "",          // your Cloudflare Worker URL, e.g. https://awqaf-photos.yourname.workers.dev
+  UPLOAD_TOKEN: "",          // same value as the Worker's UPLOAD_TOKEN secret
+  TZ:           "Asia/Dubai", // time zone used for dates/times in the app and reports
+  TZ_OFFSET:    "+04:00",     // that time zone's UTC offset (used for the report date filter)
+  PHOTO_MAX_PX: 1280,         // longest side of stored photos (1280 is sharp on screen and in reports)
+  PHOTO_TARGET_KB: 230        // aim for photos no bigger than this (lower = less storage)
 };
 /* ===================================================================== */
 
@@ -513,8 +526,8 @@ function renderOverview() {
           ${last.inspector ? `<span>👤 ${esc(last.inspector)}</span>` : ''}</div>
         <div class="chips">${chips(t) || '<span class="chip">No conditions recorded</span>'}</div>
         <div class="acts">
-          ${done ? `<button class="btn pri" data-rep="pdf" data-id="${last.id}">⬇ Generate PDF Report</button>
-                    <button class="btn" data-rep="xlsx" data-id="${last.id}">⬇ Excel Report</button>`
+          ${done ? (S.admin ? `<button class="btn pri" data-rep="pdf" data-id="${last.id}">⬇ Generate PDF Report</button>
+                    <button class="btn" data-rep="xlsx" data-id="${last.id}">⬇ Excel Report</button>` : '')
                  : `<button class="btn pri" data-resume="${last.id}">Resume inspection</button>`}
         </div>
       </div></div>`;
@@ -554,7 +567,7 @@ function renderVList() {
       <div>${fmtDate(v.started_at)}<span class="sub">${fmtTime(v.started_at)} – ${done ? fmtTime(v.finished_at) : '…'}${done ? ' · ' + fmtDur(v.started_at, v.finished_at) : ''}</span></div>
       <div class="chips" style="--x:0">${chips(tally(v.visit_items)).replace(/chip c-/g, 'chip c-')}</div>
       <div class="acts">${done
-        ? `<button class="btn sm" data-rep="pdf" data-id="${v.id}">PDF</button><button class="btn sm" data-rep="xlsx" data-id="${v.id}">Excel</button>`
+        ? (S.admin ? `<button class="btn sm" data-rep="pdf" data-id="${v.id}">PDF</button><button class="btn sm" data-rep="xlsx" data-id="${v.id}">Excel</button>` : '')
         : `<button class="btn sm pri" data-resume="${v.id}">Resume</button>`}</div>
     </div>`;
   }).join('') + (list.length > OV.shown ? `<div style="text-align:center;padding-top:12px"><button class="btn sm" id="more">Show more (${list.length - OV.shown})</button></div>` : '');
@@ -718,7 +731,7 @@ function enterStage() {
   $('#stage').classList.remove('hide');
   const v = S.visit;
   $('#sbar-m').innerHTML = `<b>${esc(v.mosque_number)} · ${esc(v.mosque_name || '')}</b><br>Started ${fmtDT(v.started_at)}`;
-  renderLocs(); updateProgress();
+  renderLocs(); updateProgress(); updateFinish();
   clearInterval(S.tick);
   const tickFn = () => {
     const s = Math.max(0, Math.floor((Date.now() - new Date(v.started_at)) / 1000));
@@ -779,19 +792,35 @@ function pickFiles(k) {
 }
 
 /* ---------- photo handling: compress in browser, upload to Cloudflare ---------- */
-function compress(file, max = 1600, q = 0.8) {
+/* Shrinks a phone photo (typically 3-8 MB) to ~150-230 KB: scaled to PHOTO_MAX_PX, then JPEG quality is
+   lowered step by step until it fits PHOTO_TARGET_KB. Quality never drops below 0.55, which is still clean
+   for A4 reports (a photo is printed ~55 mm wide, so >700 px is already beyond print resolution). */
+function loadImg(file) {
   return new Promise((res, rej) => {
     const img = new Image(), u = URL.createObjectURL(file);
-    img.onload = () => {
-      const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(u);
-      c.toBlob(b => b ? res(b) : rej(new Error('compress failed')), 'image/jpeg', q);
-    };
+    img.onload = () => { URL.revokeObjectURL(u); res(img); };
     img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Not a readable image')); };
     img.src = u;
   });
+}
+const toBlob = (c, q) => new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('compress failed')), 'image/jpeg', q));
+
+async function compress(file) {
+  const target = (CONFIG.PHOTO_TARGET_KB || 230) * 1024, top = CONFIG.PHOTO_MAX_PX || 1280;
+  const img = await loadImg(file), long = Math.max(img.naturalWidth, img.naturalHeight);
+  let best = null;
+  for (const px of [top, Math.round(top * 0.85), Math.round(top * 0.72)]) {
+    const r = Math.min(1, px / long), c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * r)); c.height = Math.max(1, Math.round(img.naturalHeight * r));
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+    for (const q of [0.78, 0.72, 0.66, 0.6, 0.55]) {
+      const b = await toBlob(c, q);
+      if (!best || b.size < best.size) best = b;
+      if (b.size <= target) return b;
+    }
+  }
+  return best;   // smallest we could get
 }
 
 async function uploadOne(blob) {
@@ -866,8 +895,8 @@ function showDone(v) {
   d.innerHTML = `<div class="tick">✓</div><h2 style="font-size:22px">Inspection completed</h2>
     <p class="sub" style="margin:6px 0 12px"><b>${esc(v.mosque_number)} · ${esc(v.mosque_name || '')}</b><br>${fmtDate(v.started_at)} · ${fmtTime(v.started_at)} – ${fmtTime(v.finished_at)} · ${fmtDur(v.started_at, v.finished_at)}</p>
     <div class="chips" style="justify-content:center">${chips(t)}</div>
-    <div class="acts"><button class="btn pri" data-rep="pdf" data-id="${v.id}">⬇ PDF Report</button><button class="btn" data-rep="xlsx" data-id="${v.id}">⬇ Excel Report</button>
-    <button class="btn" id="btn-new">New inspection</button><button class="btn" id="btn-ov">Overview</button></div>`;
+    <div class="acts">${S.admin ? `<button class="btn pri" data-rep="pdf" data-id="${v.id}">⬇ PDF Report</button><button class="btn" data-rep="xlsx" data-id="${v.id}">⬇ Excel Report</button>` : ''}
+    <button class="btn ${S.admin ? '' : 'pri'}" id="btn-new">New inspection</button><button class="btn" id="btn-ov">Overview</button></div>`;
   bindActions(d);
   $('#btn-new').onclick = resetInspection;
   $('#btn-ov').onclick = () => { resetInspection(); go('overview'); };
@@ -897,15 +926,56 @@ window.addEventListener('beforeunload', e => { if (S.visit && (S.uploads > 0 || 
    ===================================================================== */
 let AD = { rows: [] };
 
+function adminErr(e) {
+  const box = $('#aerr'); const msg = (e && e.message) || String(e);
+  console.error(e);
+  if (!box) return toast(msg, true);
+  const rls = /row-level security|permission denied|violates/i.test(msg);
+  box.innerHTML = `<b>Could not save:</b> ${esc(msg)}` + (rls ? `<br>The database rejected the change. Run <code>fix_admin.sql</code> in the Supabase SQL Editor (after adding your email to it), then sign out and back in.` : '');
+  box.classList.remove('hide'); box.scrollIntoView({block: 'nearest'});
+}
+
+const addDays = (d, n) => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+
 async function renderAdmin() {
   const el = $('#v-admin');
   if (!S.admin) return go('overview');
-  el.innerHTML = `<div class="card">
+  const today = dayKey(new Date().toISOString());
+  const zones = [...new Set(S.mosques.map(m => m.zone).filter(Boolean))].sort();
+  el.innerHTML = `
+  <div class="card" id="rep-card">
+    <h2>Consolidated report</h2>
+    <div class="sub">All completed inspections in a date range, combined into one PDF or Excel file.</div>
+    <div class="pre"><button data-p="today">Today</button><button data-p="7">Last 7 days</button><button data-p="month">This month</button><button data-p="last">Last month</button></div>
+    <div class="rgrid">
+      <div><label class="f" for="rp-from">From</label><input type="date" id="rp-from" value="${today.slice(0, 8)}01" max="${today}"></div>
+      <div><label class="f" for="rp-to">To</label><input type="date" id="rp-to" value="${today}"></div>
+      <div><label class="f" for="rp-zone">Zone</label><select id="rp-zone"><option value="">All zones</option>${zones.map(z => `<option>${esc(z)}</option>`).join('')}</select></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="rp-ph" checked> Include photos</label>
+    <div class="rcount" id="rp-count"></div>
+    <div class="row"><button class="btn pri" id="rp-pdf">⬇ PDF report</button><button class="btn" id="rp-xlsx">⬇ Excel report</button></div>
+  </div>
+  <div class="card">
     <div class="row" style="align-items:center;margin-bottom:6px"><div style="flex:1 1 240px"><h2 style="margin:0">Soft service locations</h2>
       <div class="sub">These appear, in this order, on every new inspection. Past reports keep the name they had at the time.</div></div></div>
+    <div id="aerr" class="errbox hide"></div>
     <div class="row" style="margin:14px 0 6px"><div class="grow"><input type="text" id="new-loc" placeholder="New location name, e.g. Roof & Water Tanks"></div><button class="btn pri" id="add-loc">＋ Add location</button></div>
     <div id="alist"><div class="empty"><span class="spin"></span></div></div></div>`;
   $('#add-loc').onclick = addLoc; $('#new-loc').onkeydown = e => e.key === 'Enter' && addLoc();
+  // report filters
+  const setRange = (f, t) => { $('#rp-from').value = f; $('#rp-to').value = t; updateCount(); };
+  $$('.pre button').forEach(b => b.onclick = () => {
+    const p = b.dataset.p, m0 = today.slice(0, 8) + '01';
+    if (p === 'today') setRange(today, today);
+    else if (p === '7') setRange(addDays(today, -6), today);
+    else if (p === 'month') setRange(m0, today);
+    else { const le = addDays(m0, -1); setRange(le.slice(0, 8) + '01', le); }
+  });
+  ['#rp-from', '#rp-to', '#rp-zone'].forEach(i => $(i).onchange = updateCount);
+  $('#rp-pdf').onclick = e => runConsolidated(e.currentTarget, 'pdf');
+  $('#rp-xlsx').onclick = e => runConsolidated(e.currentTarget, 'xlsx');
+  updateCount();
   loadAdmin();
 }
 
@@ -930,18 +1000,18 @@ function drawAdmin() {
     $('[data-name]', row).onchange = async e => {
       const v = e.target.value.trim(); if (!v) { e.target.value = r.name; return; }
       const {error} = await sb.from('locations').update({name: v}).eq('id', id);
-      if (error) return toast(error.message, true); r.name = v; toast('Renamed');
+      if (error) return adminErr(error); r.name = v; toast('Renamed');
     };
     $('[data-act]', row).onchange = async e => {
       const {error} = await sb.from('locations').update({active: e.target.checked}).eq('id', id);
-      if (error) return toast(error.message, true); r.active = e.target.checked; drawAdmin();
+      if (error) { e.target.checked = r.active; return adminErr(error); } r.active = e.target.checked; drawAdmin();
     };
     $('[data-up]', row).onclick = () => move(i, -1);
     $('[data-dn]', row).onclick = () => move(i, 1);
     $('[data-del]', row).onclick = async () => {
       if (!confirm(`Delete “${r.name}”?\n\nPast inspection reports keep their recorded results. To just hide it from new inspections, use the switch instead.`)) return;
       const {error} = await sb.from('locations').delete().eq('id', id);
-      if (error) return toast(error.message, true); AD.rows.splice(i, 1); drawAdmin(); toast('Deleted');
+      if (error) return adminErr(error); AD.rows.splice(i, 1); drawAdmin(); toast('Deleted');
     };
   });
 }
@@ -952,14 +1022,15 @@ async function move(i, d) {
   AD.rows.forEach((r, n) => r.sort_order = n + 1);
   drawAdmin();
   const {error} = await sb.from('locations').upsert(AD.rows.map(r => ({id: r.id, name: r.name, active: r.active, sort_order: r.sort_order})));
-  if (error) { toast(error.message, true); loadAdmin(); }
+  if (error) { adminErr(error); loadAdmin(); }
 }
 
 async function addLoc() {
   const inp = $('#new-loc'), name = inp.value.trim(); if (!name) return inp.focus();
   const next = AD.rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 1;
   const {data, error} = await sb.from('locations').insert({name, sort_order: next}).select().single();
-  if (error) return toast(error.message, true);
+  if (error) return adminErr(error);
+  $('#aerr').classList.add('hide');
   AD.rows.push(data); inp.value = ''; drawAdmin(); toast('Location added');
 }
 
@@ -967,6 +1038,7 @@ async function addLoc() {
    REPORTS (PDF / Excel)
    ===================================================================== */
 async function runReport(btn, kind, id) {
+  if (!S.admin) return toast('Reports are available to admins only', true);
   const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
   try {
     const [{data: v, error: e1}, {data: items, error: e2}] = await Promise.all([
@@ -975,7 +1047,7 @@ async function runReport(btn, kind, id) {
     ]);
     if (e1) throw e1; if (e2) throw e2;
     toast('Preparing report…');
-    const photos = await preloadPhotos(items);
+    const photos = await preloadPhotos(items, kind === 'pdf' ? {max: 800, q: 0.78} : {max: 640, q: 0.75});
     const name = `Mosque-${v.mosque_number}_${dayKey(v.started_at)}_${fmtTime(v.started_at).replace(/[: ]/g, '').toLowerCase()}`;
     if (kind === 'pdf') savePDF(v, items, photos, name + '.pdf'); else await saveXLSX(v, items, photos, name + '.xlsx');
     toast('Report ready');
@@ -984,7 +1056,8 @@ async function runReport(btn, kind, id) {
 }
 
 /* fetch every photo once, normalise to a JPEG data URL with dimensions */
-async function preloadPhotos(items) {
+async function preloadPhotos(items, o = {}) {
+  const MAX = o.max || 1100, Q = o.q || 0.8;
   const urls = [...new Set(items.flatMap(i => i.photos || []))], map = {};
   let n = 0;
   const work = async () => {
@@ -993,11 +1066,12 @@ async function preloadPhotos(items) {
       try {
         const blob = await (await fetch(u, {mode: 'cors'})).blob();
         const bmp = await createImageBitmap(blob);
-        const r = Math.min(1, 1100 / Math.max(bmp.width, bmp.height));
+        const r = Math.min(1, MAX / Math.max(bmp.width, bmp.height));
         const c = document.createElement('canvas'); c.width = Math.round(bmp.width * r); c.height = Math.round(bmp.height * r);
         const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
-        map[u] = {data: c.toDataURL('image/jpeg', 0.8), w: c.width, h: c.height};
+        map[u] = {data: c.toDataURL('image/jpeg', Q), w: c.width, h: c.height};
       } catch (e) { console.warn('photo failed', u, e); map[u] = null; }
+      if (o.onProgress) o.onProgress(Object.keys(map).length, urls.length);
     }
   };
   await Promise.all(Array.from({length: Math.min(4, urls.length)}, work));
@@ -1013,8 +1087,7 @@ const pdfSafe = s => String(s ?? '').replace(/[ʻʿ‘’`´]/g, "'").replace(/[
   .replace(/[^\x09\x0A\x20-\x7E -ÿ]/g, '?');
 const COL = {Good: [46, 125, 79], Fair: [217, 149, 26], Poor: [192, 57, 43], 'N/A': [123, 135, 145], none: [150, 150, 150]};
 
-function savePDF(v, items, photos, filename) {
-  const doc = new jspdf.jsPDF({unit: 'mm', format: 'a4'});
+function drawVisitPDF(doc, v, items, photos) {
   const W = 210, H = 297, M = 14, FOOT = 14;
   let y = 0;
   const T = (s, x, yy, o) => doc.text(pdfSafe(s), x, yy, o);
@@ -1112,14 +1185,102 @@ function savePDF(v, items, photos, filename) {
     y += 5;
   });
 
-  // footer on every page
-  const n = doc.getNumberOfPages();
+}
+
+function pdfFooters(doc, labelFor) {
+  const W = 210, H = 297, M = 14, n = doc.getNumberOfPages();
   for (let p = 1; p <= n; p++) {
     doc.setPage(p); doc.setDrawColor(227, 222, 210); doc.line(M, H - 11, W - M, H - 11);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120);
-    T(`Mosque ${v.mosque_number}  |  ${fmtDate(v.started_at)}`, M, H - 6.5);
-    T(`Page ${p} of ${n}`, W - M, H - 6.5, {align: 'right'});
+    doc.text(pdfSafe(labelFor(p)), M, H - 6.5);
+    doc.text(`Page ${p} of ${n}`, W - M, H - 6.5, {align: 'right'});
   }
+}
+
+function savePDF(v, items, photos, filename) {
+  const doc = new jspdf.jsPDF({unit: 'mm', format: 'a4'});
+  drawVisitPDF(doc, v, items, photos);
+  pdfFooters(doc, () => `Mosque ${v.mosque_number}  |  ${fmtDate(v.started_at)}`);
+  doc.save(filename);
+}
+
+/* ---------------- consolidated (date-range) report ---------------- */
+function consolidate(visits) {
+  const t = {Good: 0, Fair: 0, Poor: 0, 'N/A': 0, Un: 0}, zones = {}, mosques = new Set(), poor = []; let items = 0;
+  visits.forEach(v => {
+    mosques.add(v.mosque_id ?? v.mosque_number);
+    const z = v.zone || '-', zr = zones[z] || (zones[z] = {visits: 0, m: new Set(), Good: 0, Fair: 0, Poor: 0, 'N/A': 0, Un: 0});
+    zr.visits++; zr.m.add(v.mosque_id ?? v.mosque_number);
+    (v.items || []).forEach(i => { items++; const c = i.condition || 'Un'; t[c]++; zr[c]++; if (c === 'Poor') poor.push({v, i}); });
+  });
+  return {visits: visits.length, mosques: mosques.size, items, t, zones, poor};
+}
+
+function pdfTable(doc, y, title, cols, rows, emptyMsg) {
+  const W = 210, H = 297, M = 14, FOOT = 14;
+  const head = () => {
+    doc.setFillColor(15, 91, 74); doc.rect(M, y, W - 2 * M, 6.5, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(255);
+    let x = M; cols.forEach(c => { c.r ? doc.text(pdfSafe(c.h), x + c.w - 2, y + 4.5, {align: 'right'}) : doc.text(pdfSafe(c.h), x + 2, y + 4.5); x += c.w; });
+    y += 6.5;
+  };
+  if (y + 24 > H - FOOT) { doc.addPage(); y = 16; }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(29, 38, 35); doc.text(pdfSafe(title), M, y + 3.5); y += 7;
+  if (!rows.length) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(120); doc.text(pdfSafe(emptyMsg || 'None'), M, y + 4); return y + 12; }
+  head();
+  rows.forEach((r, ri) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    const cells = r.map((val, i) => doc.splitTextToSize(pdfSafe(val), cols[i].w - 4).slice(0, 2));
+    const h = Math.max(...cells.map(c => c.length)) * 4 + 2.6;
+    if (y + h > H - FOOT) { doc.addPage(); y = 16; head(); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); }
+    if (ri % 2 === 0) { doc.setFillColor(250, 248, 243); doc.rect(M, y, W - 2 * M, h, 'F'); }
+    doc.setTextColor(40, 48, 45);
+    let x = M; cells.forEach((c, i) => { c.forEach((ln, li) => cols[i].r ? doc.text(ln, x + cols[i].w - 2, y + 4 + li * 4, {align: 'right'}) : doc.text(ln, x + 2, y + 4 + li * 4)); x += cols[i].w; });
+    y += h;
+  });
+  return y + 7;
+}
+
+function drawSummaryPDF(doc, visits, meta) {
+  const W = 210, M = 14, st = consolidate(visits);
+  doc.setFillColor(15, 91, 74); doc.rect(0, 0, W, 30, 'F'); doc.setFillColor(184, 137, 59); doc.rect(0, 30, W, 1.2, 'F');
+  doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('Consolidated Inspection Report', M, 14);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(214, 235, 227);
+  doc.text(pdfSafe(`Fujairah Awqaf Project  |  ${meta.periodText}`), M, 21.5);
+  doc.setFontSize(9); doc.text(pdfSafe(`${meta.zone ? meta.zone + '  |  ' : ''}Generated ${fmtDT(new Date().toISOString())}`), M, 26.5);
+  let y = 40;
+  const bw = (W - 2 * M - 12) / 4;
+  [['INSPECTIONS', st.visits], ['MOSQUES COVERED', st.mosques], ['LOCATIONS CHECKED', st.items], ['RATED POOR', st.t.Poor]].forEach(([k, n], i) => {
+    const x = M + i * (bw + 4);
+    doc.setFillColor(248, 246, 240); doc.setDrawColor(227, 222, 210); doc.roundedRect(x, y, bw, 22, 2.5, 2.5, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(110, 120, 115); doc.text(k, x + 4, y + 6.5);
+    doc.setFontSize(20); i === 3 && n ? doc.setTextColor(...COL.Poor) : doc.setTextColor(15, 91, 74); doc.text(String(n), x + 4, y + 17);
+  });
+  y += 30;
+  let cx = M; doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+  [['Good', st.t.Good], ['Fair', st.t.Fair], ['Poor', st.t.Poor], ['N/A', st.t['N/A']], ['Not assessed', st.t.Un]].forEach(([k, n]) => {
+    if (!n) return; const label = `${n} ${k}`, w = doc.getTextWidth(label) + 8;
+    doc.setFillColor(...(COL[k] || COL.none)); doc.roundedRect(cx, y - 1.5, w, 6.5, 3.2, 3.2, 'F'); doc.setTextColor(255); doc.text(label, cx + 4, y + 3); cx += w + 3;
+  });
+  y += 12;
+  const zrows = Object.keys(st.zones).sort().map(z => { const r = st.zones[z]; return [z, r.visits, r.m.size, r.Good, r.Fair, r.Poor, r['N/A']]; });
+  y = pdfTable(doc, y, 'By zone', [{h: 'Zone', w: 40}, {h: 'Inspections', w: 28, r: 1}, {h: 'Mosques', w: 28, r: 1}, {h: 'Good', w: 22, r: 1}, {h: 'Fair', w: 22, r: 1}, {h: 'Poor', w: 22, r: 1}, {h: 'N/A', w: 20, r: 1}], zrows);
+  y = pdfTable(doc, y, 'Locations rated Poor', [{h: 'Mosque No.', w: 20}, {h: 'Mosque', w: 48}, {h: 'Location', w: 42}, {h: 'Date', w: 24}, {h: 'Remarks', w: 48}],
+    st.poor.map(({v, i}) => [v.mosque_number, v.mosque_name || '', i.location_name, fmtDate(v.started_at), i.remarks || '']), 'No locations were rated Poor in this period.');
+  pdfTable(doc, y, 'Inspections in this period', [{h: '#', w: 9}, {h: 'Mosque No.', w: 20}, {h: 'Mosque', w: 46}, {h: 'Zone', w: 16}, {h: 'Date', w: 24}, {h: 'Time', w: 36}, {h: 'Good', w: 10, r: 1}, {h: 'Fair', w: 10, r: 1}, {h: 'Poor', w: 11, r: 1}],
+    visits.map((v, n) => { const t = tally(v.items); return [n + 1, v.mosque_number, v.mosque_name || '', v.zone || '', fmtDate(v.started_at), `${fmtTime(v.started_at)} - ${fmtTime(v.finished_at)}`, t.Good, t.Fair, t.Poor]; }));
+}
+
+function saveConsolidatedPDF(visits, photos, meta, filename) {
+  const doc = new jspdf.jsPDF({unit: 'mm', format: 'a4'}), labels = {};
+  drawSummaryPDF(doc, visits, meta);
+  for (let p = 1; p <= doc.getNumberOfPages(); p++) labels[p] = `Consolidated report  |  ${meta.periodText}`;
+  visits.forEach(v => {
+    doc.addPage(); const p0 = doc.getNumberOfPages();
+    drawVisitPDF(doc, v, v.items, photos);
+    for (let p = p0; p <= doc.getNumberOfPages(); p++) labels[p] = `Mosque ${v.mosque_number}  |  ${fmtDate(v.started_at)}`;
+  });
+  pdfFooters(doc, p => labels[p] || '');
   doc.save(filename);
 }
 
@@ -1192,6 +1353,119 @@ async function saveXLSX(v, items, photos, filename) {
   }
   const buf = await wb.xlsx.writeBuffer();
   download(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), filename);
+}
+
+async function saveConsolidatedXLSX(visits, photos, meta, filename) {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Fujairah Awqaf Inspection'; wb.created = new Date();
+  const st = consolidate(visits), GREEN = 'FF0F5B4A', SAND = 'FFF8F6F0';
+  const fill = c => ({type: 'pattern', pattern: 'solid', fgColor: {argb: c}});
+  const argb = {Good: 'FF2E7D4F', Fair: 'FFD9951A', Poor: 'FFC0392B', 'N/A': 'FF7B8791'};
+  const hdr = (row, n) => { for (let c = 1; c <= n; c++) { const x = row.getCell(c); x.font = {bold: true, color: {argb: 'FFFFFFFF'}}; x.fill = fill(GREEN); x.alignment = {vertical: 'middle', wrapText: true}; } row.height = 24; };
+
+  // --- Summary
+  const ws = wb.addWorksheet('Summary', {views: [{showGridLines: false}]});
+  [30, 16, 14, 12, 12, 12, 12].forEach((w, i) => ws.getColumn(i + 1).width = w);
+  ws.mergeCells('A1:G1'); const t = ws.getCell('A1'); t.value = 'Fujairah Awqaf Project - Consolidated Inspection Report';
+  t.font = {bold: true, size: 16, color: {argb: 'FFFFFFFF'}}; t.fill = fill(GREEN); t.alignment = {vertical: 'middle', indent: 1}; ws.getRow(1).height = 34;
+  [['Period', meta.periodText], ['Zone', meta.zone || 'All zones'], ['Generated', fmtDT(new Date().toISOString())], ['Inspections', st.visits], ['Mosques covered', st.mosques],
+   ['Locations checked', st.items], ['Good', st.t.Good], ['Fair', st.t.Fair], ['Poor', st.t.Poor], ['N/A', st.t['N/A']], ['Not assessed', st.t.Un]].forEach(([k, v], i) => {
+    const r = 3 + i; ws.getCell(r, 1).value = k; ws.getCell(r, 1).font = {bold: true, color: {argb: 'FF68746F'}}; ws.getCell(r, 1).fill = fill(SAND);
+    ws.getCell(r, 2).value = v; ws.getCell(r, 2).font = {bold: true}; ws.getCell(r, 2).alignment = {horizontal: 'left'};
+  });
+  let r = 16; ['Zone', 'Inspections', 'Mosques', 'Good', 'Fair', 'Poor', 'N/A'].forEach((h, i) => ws.getCell(r, i + 1).value = h); hdr(ws.getRow(r), 7);
+  Object.keys(st.zones).sort().forEach(z => { r++; const x = st.zones[z]; [z, x.visits, x.m.size, x.Good, x.Fair, x.Poor, x['N/A']].forEach((v, i) => ws.getCell(r, i + 1).value = v); });
+
+  // --- Visits
+  const wv = wb.addWorksheet('Visits', {views: [{state: 'frozen', ySplit: 1}]});
+  const vc = [['Mosque No.', 11], ['Mosque', 34], ['Zone', 10], ['Location', 18], ['Date', 13], ['Start', 10], ['Finish', 10], ['Duration (min)', 14], ['Inspector', 18], ['Good', 8], ['Fair', 8], ['Poor', 8], ['N/A', 8], ['Not assessed', 13]];
+  vc.forEach(([h, w], i) => { wv.getCell(1, i + 1).value = h; wv.getColumn(i + 1).width = w; }); hdr(wv.getRow(1), vc.length);
+  visits.forEach((v, n) => {
+    const tl = tally(v.items), mins = Math.round((new Date(v.finished_at) - new Date(v.started_at)) / 60000);
+    [String(v.mosque_number), v.mosque_name || '', v.zone || '', v.location || '', fmtDate(v.started_at), fmtTime(v.started_at), fmtTime(v.finished_at), mins, v.inspector || '', tl.Good, tl.Fair, tl.Poor, tl['N/A'], tl.Un]
+      .forEach((val, i) => wv.getCell(n + 2, i + 1).value = val);
+  });
+  wv.autoFilter = {from: {row: 1, column: 1}, to: {row: 1, column: vc.length}};
+
+  // --- Details (one row per location per visit)
+  const wd = wb.addWorksheet('Details', {views: [{state: 'frozen', ySplit: 1}]});
+  const maxPh = Math.min(10, Math.max(0, ...visits.flatMap(v => v.items.map(i => (i.photos || []).length))));
+  const dc = [['Mosque No.', 11], ['Mosque', 30], ['Zone', 10], ['Date', 13], ['Start', 10], ['Location', 28], ['Status', 14], ['Remarks', 44]];
+  dc.forEach(([h, w], i) => { wd.getCell(1, i + 1).value = h; wd.getColumn(i + 1).width = w; });
+  if (maxPh) { wd.getCell(1, 9).value = 'Photos'; for (let c = 0; c < maxPh; c++) wd.getColumn(9 + c).width = 24; if (maxPh > 1) wd.mergeCells(1, 9, 1, 8 + maxPh); }
+  hdr(wd.getRow(1), 8 + Math.max(1, maxPh));
+  const bd = {style: 'thin', color: {argb: 'FFE3DED2'}};
+  let dr = 2;
+  for (const v of visits) for (const it of v.items) {
+    const ps = it.photos || [], row = wd.getRow(dr);
+    [String(v.mosque_number), v.mosque_name || '', v.zone || '', fmtDate(v.started_at), fmtTime(v.started_at), it.location_name, it.condition || 'Not assessed', it.remarks || '']
+      .forEach((val, i) => { const c = row.getCell(i + 1); c.value = val; c.alignment = {vertical: 'top', wrapText: true}; c.border = {bottom: bd}; });
+    const sc = row.getCell(7); sc.font = {bold: true, color: {argb: 'FFFFFFFF'}}; sc.fill = fill(argb[it.condition] || 'FF969696'); sc.alignment = {horizontal: 'center', vertical: 'middle'};
+    row.height = ps.length ? 118 : Math.max(20, 15 * Math.ceil((it.remarks || '').length / 48));
+    ps.slice(0, 10).forEach((u, j) => {
+      const p = photos[u]; if (!p) { row.getCell(9 + j).value = 'Photo unavailable'; return; }
+      const sc2 = Math.min(160 / p.w, 112 / p.h), id = wb.addImage({base64: p.data, extension: 'jpeg'});
+      wd.addImage(id, {tl: {col: 8 + j + 0.06, row: dr - 1 + 0.06}, ext: {width: Math.round(p.w * sc2), height: Math.round(p.h * sc2)}});
+    });
+    dr++;
+  }
+  wd.autoFilter = {from: {row: 1, column: 1}, to: {row: 1, column: 8}};
+  const buf = await wb.xlsx.writeBuffer();
+  download(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), filename);
+}
+
+function reportFilters() {
+  const from = $('#rp-from').value, to = $('#rp-to').value, zone = $('#rp-zone').value, off = CONFIG.TZ_OFFSET || '+04:00';
+  return {from, to, zone, a: from && new Date(from + 'T00:00:00' + off).toISOString(), b: to && new Date(to + 'T23:59:59.999' + off).toISOString()};
+}
+
+async function fetchRange(f, withItems) {
+  let q = sb.from('visits').select(withItems ? '*, visit_items(*)' : 'id, zone, mosque_id, mosque_number').eq('status', 'completed')
+    .gte('started_at', f.a).lte('started_at', f.b).order('started_at', {ascending: true}).limit(1000);
+  if (f.zone) q = q.eq('zone', f.zone);
+  const {data, error} = await q; if (error) throw error;
+  return data;
+}
+
+let countT;
+function updateCount() {
+  clearTimeout(countT);
+  const el = $('#rp-count'); if (!el) return;
+  const f = reportFilters();
+  if (!f.from || !f.to) { el.textContent = 'Choose a start and end date.'; return; }
+  if (f.from > f.to) { el.innerHTML = '<span style="color:var(--poor)">The start date is after the end date.</span>'; return; }
+  el.innerHTML = '<span class="spin"></span>';
+  countT = setTimeout(async () => {
+    try {
+      const d = await fetchRange(f, false); if (!$('#rp-count')) return;
+      const m = new Set(d.map(v => v.mosque_id ?? v.mosque_number)).size;
+      $('#rp-count').textContent = d.length ? `${d.length} completed inspection${d.length > 1 ? 's' : ''} · ${m} mosque${m > 1 ? 's' : ''}${d.length >= 1000 ? ' (limit reached - narrow the dates)' : ''}` : 'No completed inspections in this period.';
+    } catch (e) { $('#rp-count').textContent = 'Could not count: ' + (e.message || e); }
+  }, 250);
+}
+
+async function runConsolidated(btn, kind) {
+  if (!S.admin) return toast('Reports are available to admins only', true);
+  const f = reportFilters();
+  if (!f.from || !f.to || f.from > f.to) return toast('Pick a valid date range first', true);
+  const incl = $('#rp-ph').checked, old = btn.innerHTML, both = [$('#rp-pdf'), $('#rp-xlsx')];
+  both.forEach(b => b.disabled = true); btn.innerHTML = '<span class="spin"></span> Working…';
+  try {
+    const visits = await fetchRange(f, true);
+    if (!visits.length) { toast('No completed inspections in this period', true); return; }
+    visits.forEach(v => { v.items = (v.visit_items || []).slice().sort((a, b) => a.sort_order - b.sort_order).map(i => incl ? i : {...i, photos: []}); });
+    const all = visits.flatMap(v => v.items);
+    const nPhotos = new Set(all.flatMap(i => i.photos || [])).size;
+    if (nPhotos > 300 && !confirm(`This report contains ${nPhotos} photos. It may take a few minutes and produce a large file.\n\nContinue? (Untick "Include photos" for a much smaller file.)`)) return;
+    toast(nPhotos ? `Preparing report with ${nPhotos} photos…` : 'Preparing report…');
+    const photos = nPhotos ? await preloadPhotos(all, {...(kind === 'pdf' ? {max: 640, q: 0.7} : {max: 480, q: 0.7}), onProgress: (n, t) => { btn.innerHTML = `<span class="spin"></span> Photos ${n}/${t}`; }}) : {};
+    const iso = d => new Date(d + 'T12:00:00' + (CONFIG.TZ_OFFSET || '+04:00')).toISOString();
+    const meta = {periodText: f.from === f.to ? fmtDate(iso(f.from)) : `${fmtDate(iso(f.from))} - ${fmtDate(iso(f.to))}`, zone: f.zone};
+    const name = `Consolidated_${f.from}_to_${f.to}${f.zone ? '_' + f.zone.replace(/\s+/g, '') : ''}`;
+    btn.innerHTML = '<span class="spin"></span> Building file…'; await new Promise(r => setTimeout(r, 30));
+    if (kind === 'pdf') saveConsolidatedPDF(visits, photos, meta, name + '.pdf'); else await saveConsolidatedXLSX(visits, photos, meta, name + '.xlsx');
+    toast('Report ready');
+  } catch (e) { toast('Report failed: ' + (e.message || e), true); console.error(e); }
+  finally { both.forEach(b => b.disabled = false); btn.innerHTML = old; }
 }
 </script>
 </body>
