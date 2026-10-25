@@ -460,6 +460,23 @@ function toast(msg, err) {
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), err ? 5000 : 2600);
 }
 
+/* ---------- duplicate-safe helpers ---------- */
+const nameKey = n => String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
+/* If the same location was ever saved twice for one visit, show/report it once:
+   keep the condition, join remarks, combine photos. */
+function mergeItems(items) {
+  const map = new Map(), out = [];
+  (items || []).forEach(it => {
+    const k = nameKey(it.location_name), g = map.get(k);
+    if (!g) { const c = {...it, photos: [...(it.photos || [])]}; map.set(k, c); out.push(c); return; }
+    if (!g.condition && it.condition) g.condition = it.condition;
+    if (it.remarks && !(g.remarks || '').includes(it.remarks)) g.remarks = [g.remarks, it.remarks].filter(Boolean).join('\n');
+    (it.photos || []).forEach(u => { if (!g.photos.includes(u)) g.photos.push(u); });
+    g.sort_order = Math.min(g.sort_order ?? 0, it.sort_order ?? 0);
+  });
+  return out.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+}
+
 /* ---------- boot ---------- */
 const S = { mosques: [], locations: [], selected: null, visit: null, items: {}, order: [], timers: {}, uploads: 0, tick: null };
 let sb = null;
@@ -541,8 +558,9 @@ let OV = { visits: [], q: '', shown: 20 };
 async function loadOverview() {
   const el = $('#v-overview');
   if (!OV.visits.length) el.innerHTML = `<div class="empty"><span class="spin"></span></div>`;
-  const {data, error} = await sb.from('visits').select('*, visit_items(condition)').order('started_at', {ascending: false}).limit(500);
+  const {data, error} = await sb.from('visits').select('*, visit_items(condition, location_name, sort_order)').order('started_at', {ascending: false}).limit(500);
   if (error) { el.innerHTML = `<div class="card empty">Could not load visits.<br><span class="sub">${esc(error.message)}</span></div>`; return; }
+  data.forEach(v => v.visit_items = mergeItems(v.visit_items));
   OV.visits = data;
   renderOverview();
 }
@@ -582,7 +600,7 @@ function renderOverview() {
           ${done ? `<button class="btn pri" data-view="${last.id}">👁 View details</button>` : ''}
           ${done ? (S.admin ? `<button class="btn" data-rep="pdf" data-id="${last.id}">⬇ Generate PDF Report</button>
                     <button class="btn" data-rep="xlsx" data-id="${last.id}">⬇ Excel Report</button>` : '')
-                 : `<button class="btn pri" data-resume="${last.id}">Resume inspection</button>`}
+                 : resumeBtn(last.id)}
           ${S.admin ? `<button class="btn" data-del="${last.id}">🗑 Delete</button>` : ''}
         </div>
       </div></div>`;
@@ -623,7 +641,7 @@ function renderVList() {
       <div class="chips" style="--x:0">${chips(tally(v.visit_items)).replace(/chip c-/g, 'chip c-')}</div>
       <div class="acts">${done
         ? `<button class="btn sm pri" data-view="${v.id}">View</button>` + (S.admin ? `<button class="btn sm" data-rep="pdf" data-id="${v.id}">PDF</button><button class="btn sm" data-rep="xlsx" data-id="${v.id}">Excel</button>` : '')
-        : `<button class="btn sm pri" data-resume="${v.id}">Resume</button>`}${S.admin ? `<button class="btn sm danger" data-del="${v.id}" title="Delete this visit" aria-label="Delete visit">🗑</button>` : ''}</div>
+        : resumeBtn(v.id, true)}${S.admin ? `<button class="btn sm danger" data-del="${v.id}" title="Delete this visit" aria-label="Delete visit">🗑</button>` : ''}</div>
     </div>`;
   }).join('') + (list.length > OV.shown ? `<div style="text-align:center;padding-top:12px"><button class="btn sm" id="more">Show more (${list.length - OV.shown})</button></div>` : '');
   const more = $('#more'); if (more) more.onclick = () => { OV.shown += 20; renderVList(); bindActions(box); };
@@ -662,11 +680,12 @@ async function viewVisit(id) {
   p.innerHTML = '<div class="empty" style="padding:60px"><span class="spin"></span></div>';
   vm.classList.add('on'); document.body.style.overflow = 'hidden';
   try {
-    const [{data: v, error: e1}, {data: items, error: e2}] = await Promise.all([
+    let [{data: v, error: e1}, {data: items, error: e2}] = await Promise.all([
       sb.from('visits').select('*').eq('id', id).single(),
       sb.from('visit_items').select('*').eq('visit_id', id).order('sort_order')
     ]);
     if (e1) throw e1; if (e2) throw e2;
+    items = mergeItems(items);
     const t = tally(items), done = v.status === 'completed';
     p.innerHTML = `<div class="vm-h"><div class="no"><small>MOSQUE NO.</small>${esc(v.mosque_number)}</div>
       <div style="min-width:0"><h2>${esc(v.mosque_name || '-')}</h2>
@@ -787,8 +806,16 @@ function clearSelection(keepText) {
 async function loadActiveLocations() {
   const {data, error} = await sb.from('locations').select('*').eq('active', true).order('sort_order').order('id');
   if (error) throw error;
-  return data;
+  const seen = new Set();
+  return data.filter(l => { const k = nameKey(l.name); if (seen.has(k)) return false; seen.add(k); return true; });
 }
+
+// visits started on this device (so only their owner, or an admin, can resume them)
+const MINE_KEY = 'awqaf_mine';
+function myVisits() { try { return JSON.parse(localStorage.getItem(MINE_KEY) || '[]'); } catch (e) { return []; } }
+function markMine(id) { try { const a = myVisits().filter(x => x !== id); a.push(id); localStorage.setItem(MINE_KEY, JSON.stringify(a.slice(-100))); } catch (e) {} }
+function canResume(id) { return S.admin || myVisits().includes(id); }
+const resumeBtn = (id, sm) => canResume(id) ? `<button class="btn${sm ? ' sm' : ''} pri" data-resume="${id}">${sm ? 'Resume' : 'Resume inspection'}</button>` : `<span class="chip">In progress · only its inspector or an admin can resume</span>`;
 
 async function startVisit() {
   const m = S.selected; if (!m) return;
@@ -802,7 +829,7 @@ async function startVisit() {
       mosque_id: m.id, mosque_number: m.mosque_number, mosque_name: m.name.trim(), zone: m.zone, location: m.location, inspector: inspector || null
     }).select().single();
     if (error) throw error;
-    S.visit = data;
+    S.visit = data; markMine(data.id);
     S.order = locs.map((l, i) => ({key: 'l' + l.id, location_id: l.id, name: l.name, sort: i}));
     S.items = {};
     S.order.forEach(o => S.items[o.key] = {id: crypto.randomUUID(), condition: null, remarks: '', photos: [], up: 0, err: 0, saved: false});
@@ -812,23 +839,31 @@ async function startVisit() {
 }
 
 async function resumeVisit(id) {
+  if (!canResume(id)) { toast('Only the inspector who started this visit, or an admin, can resume it.', true); return; }
+  if (S.visit && S.visit.id === id) { go('inspect'); return; }          // already open here: just go back to it
+  if (S.visit && !confirm('You have another inspection open on this device. Switch to the one you tapped?')) return;
   try {
-    const [{data: v, error: e1}, {data: its, error: e2}, locs] = await Promise.all([
+    let [{data: v, error: e1}, {data: its, error: e2}, locs] = await Promise.all([
       sb.from('visits').select('*').eq('id', id).single(),
       sb.from('visit_items').select('*').eq('visit_id', id).order('sort_order'),
       loadActiveLocations()
     ]);
     if (e1) throw e1; if (e2) throw e2;
+    if (!S.visit || S.visit.id !== v.id) {
+      const who = [v.mosque_number + ' ' + (v.mosque_name || ''), v.inspector ? 'by ' + v.inspector : '', 'started ' + fmtDT(v.started_at)].filter(Boolean).join(' · ');
+      if (!confirm('Continue this unfinished inspection?\n\n' + who + '\n\nIf someone else is still working on it, wait for them to finish instead.')) return;
+    }
     S.visit = v; S.order = []; S.items = {};
-    const byLoc = new Map(its.filter(i => i.location_id != null).map(i => [i.location_id, i]));
+    its = mergeItems(its);
+    const byLoc = new Map(its.map(i => [nameKey(i.location_name), i]));
     const mk = (key, location_id, name, it) => {
       S.order.push({key, location_id, name, sort: S.order.length});
       S.items[key] = it ? {id: it.id, condition: it.condition, remarks: it.remarks || '', photos: it.photos || [], up: 0, err: 0, saved: true}
                         : {id: crypto.randomUUID(), condition: null, remarks: '', photos: [], up: 0, err: 0, saved: false};
     };
-    locs.forEach(l => mk('l' + l.id, l.id, l.name, byLoc.get(l.id)));
+    locs.forEach(l => mk('l' + l.id, l.id, l.name, byLoc.get(nameKey(l.name))));
     // saved items whose location was since removed/deactivated
-    its.filter(i => i.location_id == null || !locs.some(l => l.id === i.location_id)).forEach(i => mk('i' + i.id, i.location_id, i.location_name, i));
+    its.filter(i => !locs.some(l => nameKey(l.name) === nameKey(i.location_name))).forEach(i => mk('i' + i.id, i.location_id, i.location_name, i));
     S.selected = S.mosques.find(m => m.id === v.mosque_id) || null;
     $('#mq-input').value = `${v.mosque_number} — ${v.mosque_name || ''}`;
     $('#inspector').value = v.inspector || '';
@@ -971,10 +1006,20 @@ function queueSave(k) {
 async function saveItem(k) {
   clearTimeout(S.timers[k]); delete S.timers[k];
   const it = S.items[k], o = S.order.find(x => x.key === k);
-  const {error} = await sb.from('visit_items').upsert({
-    id: it.id, visit_id: S.visit.id, location_id: o.location_id, location_name: o.name, sort_order: o.sort,
-    condition: it.condition, remarks: it.remarks.trim() || null, photos: it.photos, updated_at: new Date().toISOString()
-  });
+  const row = {id: it.id, visit_id: S.visit.id, location_id: o.location_id, location_name: o.name, sort_order: o.sort,
+    condition: it.condition, remarks: it.remarks.trim() || null, photos: it.photos, updated_at: new Date().toISOString()};
+  let {error} = await sb.from('visit_items').upsert(row);
+  if (error && error.code === '23505' && o.location_id != null) {
+    // another session already saved a row for this location in this visit: merge into that row (never overwrite with blanks)
+    const {data: ex, error: e0} = await sb.from('visit_items').select('*').eq('visit_id', row.visit_id).eq('location_id', row.location_id).limit(1);
+    if (e0 || !ex || !ex.length) error = e0 || error;
+    else {
+      const cur = ex[0], photos = [...new Set([...(cur.photos || []), ...row.photos])];
+      const merged = {condition: row.condition || cur.condition, remarks: row.remarks || cur.remarks, photos, sort_order: row.sort_order, updated_at: row.updated_at};
+      ({error} = await sb.from('visit_items').update(merged).eq('id', cur.id));
+      if (!error) { it.id = cur.id; it.condition = merged.condition; it.photos = photos; if (merged.remarks && !it.remarks) it.remarks = merged.remarks; renderPhotos(k); }
+    }
+  }
   if (error) { setSave('err'); toast('Save failed: ' + error.message, true); return false; }
   it.saved = true;
   if (!Object.keys(S.timers).length) setSave('ok');
@@ -1041,7 +1086,7 @@ window.addEventListener('beforeunload', e => { if (S.visit && (S.uploads > 0 || 
 /* =====================================================================
    SITES — all mosques with last visit, filters, map link
    ===================================================================== */
-let SI = {zone: '', status: 'all', from: '', to: '', q: '', sort: 'zone', dir: 1, shown: 100, visits: null};
+let SI = {start: (() => { try { return localStorage.getItem('awqaf_start') || ''; } catch (e) { return ''; } })(), ord: 'route', zone: '', status: 'all', from: '', to: '', q: '', sort: 'zone', dir: 1, shown: 100, visits: null};
 
 async function fetchAllCompleted() {
   let all = [], from = 0;
@@ -1094,6 +1139,16 @@ function renderSitesShell() {
     <div class="pre"><button data-p="7">Last 7 days</button><button data-p="30">Last 30 days</button><button data-p="month">This month</button><button data-p="clear">Clear dates</button></div>
     <div class="seg" id="si-seg"></div>
     <div class="sub" id="si-hint" style="margin-top:6px"></div>
+    <div style="margin-top:10px"><button class="btn" id="si-xlsx">⬇ Export list to Excel</button></div>
+    <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+      <div style="font-weight:800;margin-bottom:2px">Route PDF</div>
+      <div class="sub">Downloads the sites currently listed (respecting the filters above) as one PDF, nearest first, with a clickable map link for each.</div>
+      <div class="rgrid">
+        <div style="grid-column:span 2"><label class="f" for="si-start">Start point (latitude, longitude)</label><input type="text" id="si-start" inputmode="decimal" placeholder="25.872676, 56.023957" value="${esc(SI.start)}"></div>
+        <div><label class="f" for="si-ord">Order</label><select id="si-ord"><option value="route" ${SI.ord === 'route' ? 'selected' : ''}>Nearest-next route</option><option value="near" ${SI.ord === 'near' ? 'selected' : ''}>Nearest to start point</option></select></div>
+      </div>
+      <div class="row"><button class="btn" id="si-loc">📍 Use my location</button><button class="btn pri" id="si-pdf">⬇ Route PDF</button></div>
+    </div>
   </div>
   <div class="card" style="margin-top:16px;padding:12px">
     <div class="shead"><button data-s="zone">Zone</button><button data-s="no">Mosque No.</button><button data-s="name">Mosque</button><button data-s="last">Last site visit</button><span>Google map</span></div>
@@ -1108,6 +1163,15 @@ function renderSitesShell() {
     if (p === 'clear') { SI.from = SI.to = ''; } else { SI.to = today; SI.from = p === 'month' ? today.slice(0, 8) + '01' : addDays(today, -(+p - 1)); }
     $('#si-from').value = SI.from; $('#si-to').value = SI.to; SI.shown = 100; renderSites();
   });
+  $('#si-start').oninput = e => { SI.start = e.target.value; try { localStorage.setItem('awqaf_start', SI.start); } catch (err) {} };
+  $('#si-ord').onchange = e => { SI.ord = e.target.value; };
+  $('#si-loc').onclick = () => {
+    if (!navigator.geolocation) return toast('Location is not available on this device', true);
+    navigator.geolocation.getCurrentPosition(p => { SI.start = `${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`; $('#si-start').value = SI.start; try { localStorage.setItem('awqaf_start', SI.start); } catch (err) {} toast('Start point set to your location'); },
+      () => toast('Could not get your location - type the coordinates instead', true), {enableHighAccuracy: true, timeout: 15000});
+  };
+  $('#si-pdf').onclick = e => makeRoutePDF(e.currentTarget);
+  $('#si-xlsx').onclick = e => exportSitesXLSX(e.currentTarget);
   $$('.shead button').forEach(b => b.onclick = () => { SI.dir = SI.sort === b.dataset.s ? -SI.dir : 1; SI.sort = b.dataset.s; renderSites(); });
   renderSites();
 }
@@ -1122,6 +1186,7 @@ function renderSites() {
     ? `“Visited” means at least one completed inspection between ${SI.from ? fmtDate(new Date(SI.from + 'T12:00:00' + (CONFIG.TZ_OFFSET || '+04:00')).toISOString()) : 'the start'} and ${SI.to ? fmtDate(new Date(SI.to + 'T12:00:00' + (CONFIG.TZ_OFFSET || '+04:00')).toISOString()) : 'today'}.`
     : '“Not visited yet” means no completed inspection has been recorded for the site.';
   const list = rows.filter(r => SI.status === 'all' || (SI.status === 'visited') === r.visited);
+  SI.cur = list.slice();
   const zk = z => numKey((z || '').replace(/\D+/g, ''));
   const cmp = {
     zone: (x, y) => zk(x.m.zone) - zk(y.m.zone) || (x.m.zone || '').localeCompare(y.m.zone || '') || numKey(x.m.mosque_number) - numKey(y.m.mosque_number),
@@ -1142,6 +1207,90 @@ function renderSites() {
       <span>${url ? `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">📍 Map</a>` : '<span class="sub">No location</span>'}</span></div>`;
   }).join('') + (list.length > SI.shown ? `<div style="text-align:center;padding:14px"><button class="btn sm" id="si-more">Show more (${list.length - SI.shown})</button></div>` : '');
   const more = $('#si-more'); if (more) more.onclick = () => { SI.shown += 100; renderSites(); };
+}
+
+async function exportSitesXLSX(btn) {
+  const list = (SI.cur || []).slice();
+  if (!list.length) return toast('No sites in the list to export', true);
+  btn.disabled = true;
+  try {
+    const hasRange = SI.from || SI.to;
+    const zk = z => numKey((z || '').replace(/\D+/g, ''));
+    list.sort((x, y) => zk(x.m.zone) - zk(y.m.zone) || numKey(x.m.mosque_number) - numKey(y.m.mosque_number));
+    const wb = new ExcelJS.Workbook(); wb.creator = 'Fujairah Awqaf Inspection';
+    const ws = wb.addWorksheet('Sites', {views: [{state: 'frozen', ySplit: 1}]});
+    ws.columns = [{header: 'Zone', width: 10}, {header: 'Mosque No.', width: 12}, {header: 'Mosque', width: 52}, {header: 'Area', width: 20}, {header: 'Last site visit', width: 26}, {header: 'Google map', width: 14}];
+    list.forEach(({m, visited, last, lastAll}) => {
+      const row = ws.addRow([m.zone || '', Number(m.mosque_number) || m.mosque_number, m.name.trim(), m.location || '',
+        visited ? fmtDate(new Date(last).toISOString()) : (hasRange ? 'Not visited in period' : 'Not visited yet') + (lastAll ? ' (last ' + fmtDate(new Date(lastAll).toISOString()) + ')' : ''), '']);
+      const url = mapsUrl(m), c = row.getCell(6);
+      if (url) { c.value = {text: 'Open map', hyperlink: url}; c.font = {color: {argb: 'FF1A5EC8'}, underline: true}; }
+      else { c.value = 'No location'; c.font = {italic: true, color: {argb: 'FF888888'}}; }
+      row.getCell(2).alignment = {horizontal: 'center'};
+    });
+    const h = ws.getRow(1); h.height = 22;
+    h.eachCell(c => { c.font = {bold: true, color: {argb: 'FFFFFFFF'}}; c.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: 'FF0F5B4A'}}; c.alignment = {vertical: 'middle'}; });
+    ws.autoFilter = {from: {row: 1, column: 1}, to: {row: 1, column: 6}};
+    const buf = await wb.xlsx.writeBuffer();
+    download(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),
+      `Sites_${(SI.zone || 'AllZones').replace(/\s+/g, '')}_${SI.status === 'not' ? 'NotVisited' : SI.status === 'visited' ? 'Visited' : 'All'}_${dayKey(new Date().toISOString())}.xlsx`);
+    toast('Excel ready');
+  } catch (e) { toast('Could not export: ' + (e.message || e), true); console.error(e); }
+  btn.disabled = false;
+}
+
+const rad = d => d * Math.PI / 180;
+function haversine(a, b) {
+  const dLat = rad(b[0] - a[0]), dLng = rad(b[1] - a[1]);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+function makeRoutePDF(btn) {
+  const mm = SI.start.match(/(-?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)/);
+  if (!mm) return toast('Enter the start point as latitude, longitude', true);
+  const start = [parseFloat(mm[1]), parseFloat(mm[2])];
+  if (Math.abs(start[0]) > 90 || Math.abs(start[1]) > 180) return toast('Those coordinates look invalid', true);
+  const list = SI.cur || [];
+  if (!list.length) return toast('No sites in the list to export', true);
+  btn.disabled = true;
+  try {
+    const withC = list.filter(r => r.m.latitude != null), without = list.filter(r => r.m.latitude == null);
+    const stops = []; let total = 0;
+    if (SI.ord === 'near') {
+      withC.map(r => ({r, d: haversine(start, [r.m.latitude, r.m.longitude])})).sort((a, b) => a.d - b.d).forEach(x => { stops.push(x); total += x.d; });
+    } else {
+      let cur = start; const rest = withC.slice();
+      while (rest.length) {
+        let bi = 0, bd = Infinity;
+        rest.forEach((r, i) => { const d = haversine(cur, [r.m.latitude, r.m.longitude]); if (d < bd) { bd = d; bi = i; } });
+        const [r] = rest.splice(bi, 1); stops.push({r, d: bd}); total += bd; cur = [r.m.latitude, r.m.longitude];
+      }
+    }
+    const doc = new jspdf.jsPDF({unit: 'mm', format: 'a4'}), W = 210, M = 14;
+    const hasRange = SI.from || SI.to, off = CONFIG.TZ_OFFSET || '+04:00';
+    const dtxt = d => fmtDate(new Date(d + 'T12:00:00' + off).toISOString());
+    const filt = [SI.zone || 'All zones', SI.status === 'not' ? (hasRange ? 'Not visited in period' : 'Pending (not visited yet)') : SI.status === 'visited' ? 'Visited' : 'All sites',
+      hasRange ? `${SI.from ? dtxt(SI.from) : 'start'} to ${SI.to ? dtxt(SI.to) : 'today'}` : '', SI.q ? `Search: ${SI.q}` : ''].filter(Boolean).join('  |  ');
+    doc.setFillColor(15, 91, 74); doc.rect(0, 0, W, 34, 'F'); doc.setFillColor(184, 137, 59); doc.rect(0, 34, W, 1.2, 'F');
+    doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('Site Visit Route List', M, 13);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(214, 235, 227);
+    doc.text(pdfSafe('Fujairah Awqaf Project  |  ' + filt), M, 20, {maxWidth: W - 2 * M});
+    doc.setFontSize(9);
+    doc.text(`Start point: ${start[0].toFixed(6)}, ${start[1].toFixed(6)}  |  ${SI.ord === 'near' ? 'Ordered by distance from the start point' : 'Nearest-next route (each stop is the closest remaining site to the previous one)'}`, M, 26, {maxWidth: W - 2 * M});
+    doc.text(`${list.length} site${list.length > 1 ? 's' : ''}  |  ${SI.ord === 'near' ? '' : 'Approx. route length ' + total.toFixed(1) + ' km  |  '}Straight-line distances  |  Generated ${fmtDT(new Date().toISOString())}`, M, 31);
+    const url = m => `https://www.google.com/maps/search/?api=1&query=${m.latitude},${m.longitude}`;
+    const statusTxt = r => r.visited ? 'Visited ' + fmtDate(new Date(r.last).toISOString()) : (r.lastAll ? 'Pending (last ' + fmtDate(new Date(r.lastAll).toISOString()) + ')' : 'Pending');
+    const cols = [{h: '#', w: 9}, {h: 'Mosque No.', w: 17}, {h: 'Mosque', w: 56}, {h: 'Area', w: 28}, {h: 'Status', w: 31}, {h: SI.ord === 'near' ? 'From start' : 'Leg km', w: 15, r: 1}, {h: 'Map', w: 26}];
+    let y = pdfTable(doc, 42, 'Sites in visiting order', cols, stops.map((x, i) =>
+      [i + 1, x.r.m.mosque_number, x.r.m.name.trim(), x.r.m.location || '', statusTxt(x.r), x.d.toFixed(1), {t: 'Open map', url: url(x.r.m)}]));
+    if (without.length) pdfTable(doc, y, 'No map coordinates on file (not included in the route)', cols.slice(0, 5).concat([{h: '', w: 15}, {h: '', w: 26}]),
+      without.map((r, i) => ['-', r.m.mosque_number, r.m.name.trim(), r.m.location || '', statusTxt(r), '', '']));
+    pdfFooters(doc, () => `Route list  |  ${SI.zone || 'All zones'}`);
+    doc.save(`Route_${(SI.zone || 'AllZones').replace(/\s+/g, '')}_${SI.status === 'not' ? 'Pending' : SI.status === 'visited' ? 'Visited' : 'All'}_${dayKey(new Date().toISOString())}.pdf`);
+    toast('Route PDF ready');
+  } catch (e) { toast('Could not create PDF: ' + (e.message || e), true); console.error(e); }
+  btn.disabled = false;
 }
 
 /* =====================================================================
@@ -1244,17 +1393,24 @@ async function move(i, d) {
   [AD.rows[i], AD.rows[j]] = [AD.rows[j], AD.rows[i]];
   AD.rows.forEach((r, n) => r.sort_order = n + 1);
   drawAdmin();
-  const {error} = await sb.from('locations').upsert(AD.rows.map(r => ({id: r.id, name: r.name, active: r.active, sort_order: r.sort_order})));
-  if (error) { adminErr(error); loadAdmin(); }
+  const res = await Promise.all(AD.rows.map(r => sb.from('locations').update({sort_order: r.sort_order}).eq('id', r.id)));
+  const bad = res.find(x => x.error);
+  if (bad) { adminErr(bad.error); loadAdmin(); }
 }
 
+let addingLoc = false;
 async function addLoc() {
-  const inp = $('#new-loc'), name = inp.value.trim(); if (!name) return inp.focus();
-  const next = AD.rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 1;
-  const {data, error} = await sb.from('locations').insert({name, sort_order: next}).select().single();
-  if (error) return adminErr(error);
-  $('#aerr').classList.add('hide');
-  AD.rows.push(data); inp.value = ''; drawAdmin(); toast('Location added');
+  if (addingLoc) return;                       // ignore double taps / Enter + button
+  const inp = $('#new-loc'), btn = $('#add-loc'), name = inp.value.trim().replace(/\s+/g, ' '); if (!name) return inp.focus();
+  if (AD.rows.some(r => nameKey(r.name) === nameKey(name))) { inp.select(); return toast(`"${name}" is already in the list`, true); }
+  addingLoc = true; btn.disabled = true; inp.value = '';
+  try {
+    const next = AD.rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 1;
+    const {data, error} = await sb.from('locations').insert({name, sort_order: next}).select().single();
+    if (error) { inp.value = name; return error.code === '23505' ? toast(`"${name}" is already in the list`, true) : adminErr(error); }
+    $('#aerr').classList.add('hide');
+    AD.rows.push(data); drawAdmin(); toast('Location added');
+  } finally { addingLoc = false; btn.disabled = false; inp.focus(); }
 }
 
 /* =====================================================================
@@ -1264,11 +1420,12 @@ async function runReport(btn, kind, id) {
   if (!S.admin) return toast('Reports are available to admins only', true);
   const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
   try {
-    const [{data: v, error: e1}, {data: items, error: e2}] = await Promise.all([
+    let [{data: v, error: e1}, {data: items, error: e2}] = await Promise.all([
       sb.from('visits').select('*').eq('id', id).single(),
       sb.from('visit_items').select('*').eq('visit_id', id).order('sort_order')
     ]);
     if (e1) throw e1; if (e2) throw e2;
+    items = mergeItems(items);
     toast('Preparing report…');
     const photos = await preloadPhotos(items, kind === 'pdf' ? {max: 800, q: 0.78} : {max: 640, q: 0.75});
     const name = `Mosque-${v.mosque_number}_${dayKey(v.started_at)}_${fmtTime(v.started_at).replace(/[: ]/g, '').toLowerCase()}`;
@@ -1453,12 +1610,17 @@ function pdfTable(doc, y, title, cols, rows, emptyMsg) {
   head();
   rows.forEach((r, ri) => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-    const cells = r.map((val, i) => doc.splitTextToSize(pdfSafe(val), cols[i].w - 4).slice(0, 2));
+    const urls = r.map(val => val && val.url), cells = r.map((val, i) => doc.splitTextToSize(pdfSafe(val && val.t !== undefined ? val.t : val), cols[i].w - 4).slice(0, 2));
     const h = Math.max(...cells.map(c => c.length)) * 4 + 2.6;
     if (y + h > H - FOOT) { doc.addPage(); y = 16; head(); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); }
     if (ri % 2 === 0) { doc.setFillColor(250, 248, 243); doc.rect(M, y, W - 2 * M, h, 'F'); }
     doc.setTextColor(40, 48, 45);
-    let x = M; cells.forEach((c, i) => { c.forEach((ln, li) => cols[i].r ? doc.text(ln, x + cols[i].w - 2, y + 4 + li * 4, {align: 'right'}) : doc.text(ln, x + 2, y + 4 + li * 4)); x += cols[i].w; });
+    let x = M; cells.forEach((c, i) => {
+      if (urls[i]) { doc.setTextColor(26, 94, 200); doc.setFont('helvetica', 'bold'); }
+      c.forEach((ln, li) => cols[i].r ? doc.text(ln, x + cols[i].w - 2, y + 4 + li * 4, {align: 'right'}) : doc.text(ln, x + 2, y + 4 + li * 4));
+      if (urls[i]) { doc.link(x, y, cols[i].w, h, {url: urls[i]}); const tw = doc.getTextWidth(c[0]); doc.setDrawColor(26, 94, 200); doc.setLineWidth(0.2); doc.line(x + 2, y + 4.8, x + 2 + tw, y + 4.8); doc.setTextColor(40, 48, 45); doc.setFont('helvetica', 'normal'); }
+      x += cols[i].w;
+    });
     y += h;
   });
   return y + 7;
@@ -1646,6 +1808,7 @@ async function fetchRange(f, withItems) {
     .gte('started_at', f.a).lte('started_at', f.b).order('started_at', {ascending: true}).limit(1000);
   if (f.zone) q = q.eq('zone', f.zone);
   const {data, error} = await q; if (error) throw error;
+  if (withItems) data.forEach(v => v.visit_items = mergeItems(v.visit_items));
   return data;
 }
 
