@@ -47,6 +47,7 @@ textarea{resize:vertical;min-height:64px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:11px;border:1.5px solid var(--g);background:#fff;color:var(--g);font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
 .btn:hover{background:var(--g3)}
 .btn.pri{background:var(--g);color:#fff}
+a.btn{text-decoration:none}
 .btn.pri:hover{background:var(--g2)}
 .btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
 .btn.danger{border-color:#e6b9b3;color:var(--poor)}
@@ -294,6 +295,33 @@ nav .ic{display:none;font-style:normal}
 .vm-rem b{display:block;font-size:11px;letter-spacing:.5px;color:var(--mut);text-transform:uppercase;margin-bottom:2px}
 .lb{z-index:95}
 @media(max-width:720px){.vm{padding:0}.vm-p{border-radius:0;min-height:100%}.vm-h{padding-top:calc(14px + env(safe-area-inset-top))}}
+
+/* sites list */
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.seg button{flex:1 1 130px;padding:10px 12px;border:1.5px solid var(--line);background:#fff;border-radius:11px;font-weight:700;cursor:pointer;color:var(--mut);display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.seg button b{font-size:20px;color:var(--ink)}
+.seg button.on{border-color:var(--g);background:var(--g3);color:var(--g)}
+.seg button.on b{color:var(--g)}
+.seg button.warn.on{border-color:var(--fair);background:#fdf3de;color:#8a5a00}.seg button.warn.on b{color:#8a5a00}
+.shead,.srow{display:grid;grid-template-columns:90px 90px 1.7fr 1.5fr 120px;gap:10px;align-items:center;padding:11px 8px}
+.shead{background:var(--g);color:#fff;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 8px}
+.shead button{background:none;border:0;color:#fff;font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;text-align:left;padding:0}
+.shead button.on::after{content:attr(data-a);margin-left:4px}
+.srow{border-bottom:1px solid var(--line)}
+.srow .no{font-weight:800;color:var(--g);font-size:17px}
+.srow .nm{font-weight:600}
+.srow .zn{font-size:12.5px;font-weight:700;color:var(--mut)}
+.nv{display:inline-block;background:#fdf3de;color:#8a5a00;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:800}
+.srow .sub{display:block}
+@media(max-width:720px){
+  .shead{display:none}
+  .srow{grid-template-columns:62px 1fr auto;gap:2px 10px;padding:12px 4px}
+  .srow > :nth-child(1){grid-column:1;grid-row:1}
+  .srow > :nth-child(2){grid-column:1;grid-row:2}
+  .srow > :nth-child(3){grid-column:2;grid-row:1}
+  .srow > :nth-child(4){grid-column:2;grid-row:2}
+  .srow > :nth-child(5){grid-column:3;grid-row:1/3}
+}
 </style>
 </head>
 <body>
@@ -320,6 +348,7 @@ nav .ic{display:none;font-style:normal}
     <nav>
       <button data-v="overview" class="on"><i class="ic">📊</i><span>Overview</span></button>
       <button data-v="inspect"><i class="ic">📝</i><span>Inspection</span></button>
+      <button data-v="sites"><i class="ic">🗺️</i><span>Sites</span></button>
       <button data-v="admin" class="hide" id="nav-admin"><i class="ic">⚙️</i><span>Admin</span></button>
     </nav>
     <div class="who"><span id="who-t"></span><button id="who-b"></button></div>
@@ -379,6 +408,8 @@ nav .ic{display:none;font-style:normal}
   </section>
 
   <!-- ================= ADMIN ================= -->
+  <section id="v-sites" class="view"></section>
+
   <section id="v-admin" class="view"></section>
 </main>
 
@@ -395,10 +426,10 @@ nav .ic{display:none;font-style:normal}
    CONFIGURATION — fill these in before deploying
    ===================================================================== */
 const CONFIG = {
-  SUPABASE_URL: "https://bymdxtlbtcvsoqfcmbaa.supabase.co",          // e.g. https://abcdxyz.supabase.co
-  SUPABASE_KEY: "sb_publishable_VoSR6DTp6pwLwQ0V6xEuXA_QKl6CF_0",          // the "anon / public" key
-  UPLOAD_URL:   "https://awqaf-photos.azzurro-reports.workers.dev",          // your Cloudflare Worker URL, e.g. https://awqaf-photos.yourname.workers.dev
-  UPLOAD_TOKEN: "qaviXCLIbdLGocNBDIfAInaUjQAsrtjc",          // same value as the Worker's UPLOAD_TOKEN secret
+  SUPABASE_URL: "",          // e.g. https://abcdxyz.supabase.co
+  SUPABASE_KEY: "",          // the "anon / public" key
+  UPLOAD_URL:   "",          // your Cloudflare Worker URL, e.g. https://awqaf-photos.yourname.workers.dev
+  UPLOAD_TOKEN: "",          // same value as the Worker's UPLOAD_TOKEN secret
   TZ:           "Asia/Dubai", // time zone used for dates/times in the app and reports
   TZ_OFFSET:    "+04:00",     // that time zone's UTC offset (used for the report date filter)
   PHOTO_MAX_PX: 1280,         // longest side of stored photos (1280 is sharp on screen and in reports)
@@ -492,12 +523,13 @@ async function signOut() {
 }
 
 function go(v) {
-  if (!['overview', 'inspect', 'admin'].includes(v) || (v === 'admin' && !S.admin)) v = 'overview';
+  if (!['overview', 'inspect', 'sites', 'admin'].includes(v) || (v === 'admin' && !S.admin)) v = 'overview';
   $$('section.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   history.replaceState(null, '', '#' + v);
   window.scrollTo(0, 0);
   if (v === 'overview') loadOverview();
+  if (v === 'sites') loadSites();
   if (v === 'admin') renderAdmin();
 }
 
@@ -616,7 +648,7 @@ async function deleteVisit(btn, id) {
     if (e1) throw e1;
     const {error} = await sb.from('visits').delete().eq('id', id);
     if (error) throw error;
-    OV.visits = OV.visits.filter(x => x.id !== id);
+    OV.visits = OV.visits.filter(x => x.id !== id); SI.visits = null;
     if (S.visit && S.visit.id === id) { Object.values(S.timers).forEach(clearTimeout); S.timers = {}; resetInspection(); }
     renderOverview();
     toast('Inspection deleted');
@@ -966,7 +998,7 @@ async function finishVisit() {
     const finished = new Date().toISOString();
     const {data, error} = await sb.from('visits').update({finished_at: finished, status: 'completed'}).eq('id', S.visit.id).select().single();
     if (error) throw error;
-    clearInterval(S.tick);
+    clearInterval(S.tick); SI.visits = null;
     showDone(data);
   } catch (e) { toast('Could not finish: ' + (e.message || e), true); console.error(e); updateFinish(); }
 }
@@ -1005,6 +1037,112 @@ async function discardVisit() {
 }
 
 window.addEventListener('beforeunload', e => { if (S.visit && (S.uploads > 0 || Object.keys(S.timers).length)) { e.preventDefault(); e.returnValue = ''; } });
+
+/* =====================================================================
+   SITES — all mosques with last visit, filters, map link
+   ===================================================================== */
+let SI = {zone: '', status: 'all', from: '', to: '', q: '', sort: 'zone', dir: 1, shown: 100, visits: null};
+
+async function fetchAllCompleted() {
+  let all = [], from = 0;
+  for (;;) {
+    const {data, error} = await sb.from('visits').select('mosque_id,started_at').eq('status', 'completed').order('started_at', {ascending: false}).range(from, from + 999);
+    if (error) throw error;
+    all = all.concat(data); if (data.length < 1000) break; from += 1000;
+  }
+  return all;
+}
+
+async function loadSites() {
+  const el = $('#v-sites');
+  if (!SI.visits) el.innerHTML = `<div class="empty"><span class="spin"></span></div>`;
+  try { SI.visits = await fetchAllCompleted(); } catch (e) { el.innerHTML = `<div class="card empty">Could not load visits.<br><span class="sub">${esc(e.message)}</span></div>`; return; }
+  renderSitesShell();
+}
+
+const numKey = n => { const x = parseInt(n, 10); return isNaN(x) ? Infinity : x; };
+
+function computeSites() {
+  const off = CONFIG.TZ_OFFSET || '+04:00';
+  const a = SI.from ? new Date(SI.from + 'T00:00:00' + off).getTime() : -Infinity, b = SI.to ? new Date(SI.to + 'T23:59:59.999' + off).getTime() : Infinity;
+  const by = new Map();
+  SI.visits.forEach(v => {
+    const t = new Date(v.started_at).getTime(), x = by.get(v.mosque_id) || {all: 0, inr: 0};
+    if (t > x.all) x.all = t;
+    if (t >= a && t <= b && t > x.inr) x.inr = t;
+    by.set(v.mosque_id, x);
+  });
+  const q = SI.q.trim().toLowerCase();
+  return S.mosques.filter(m => (!SI.zone || m.zone === SI.zone) && (!q || m._s.includes(q))).map(m => {
+    const x = by.get(m.id) || {all: 0, inr: 0};
+    return {m, visited: !!x.inr, last: x.inr || x.all, lastAll: x.all};
+  });
+}
+
+function renderSitesShell() {
+  const today = dayKey(new Date().toISOString());
+  const zones = [...new Set(S.mosques.map(m => m.zone).filter(Boolean))].sort();
+  $('#v-sites').innerHTML = `
+  <div class="card">
+    <h2>Sites</h2>
+    <div class="rgrid">
+      <div><label class="f" for="si-zone">Zone</label><select id="si-zone"><option value="">All zones</option>${zones.map(z => `<option ${z === SI.zone ? 'selected' : ''}>${esc(z)}</option>`).join('')}</select></div>
+      <div><label class="f" for="si-from">Visit date from</label><input type="date" id="si-from" value="${SI.from}"></div>
+      <div><label class="f" for="si-to">Visit date to</label><input type="date" id="si-to" value="${SI.to}"></div>
+      <div><label class="f" for="si-q">Search</label><input type="search" id="si-q" placeholder="Mosque no. or name" value="${esc(SI.q)}"></div>
+    </div>
+    <div class="pre"><button data-p="7">Last 7 days</button><button data-p="30">Last 30 days</button><button data-p="month">This month</button><button data-p="clear">Clear dates</button></div>
+    <div class="seg" id="si-seg"></div>
+    <div class="sub" id="si-hint" style="margin-top:6px"></div>
+  </div>
+  <div class="card" style="margin-top:16px;padding:12px">
+    <div class="shead"><button data-s="zone">Zone</button><button data-s="no">Mosque No.</button><button data-s="name">Mosque</button><button data-s="last">Last site visit</button><span>Google map</span></div>
+    <div id="si-list"></div>
+  </div>`;
+  $('#si-zone').onchange = e => { SI.zone = e.target.value; SI.shown = 100; renderSites(); };
+  $('#si-from').onchange = e => { SI.from = e.target.value; SI.shown = 100; renderSites(); };
+  $('#si-to').onchange = e => { SI.to = e.target.value; SI.shown = 100; renderSites(); };
+  $('#si-q').oninput = e => { SI.q = e.target.value; SI.shown = 100; renderSites(); };
+  $$('#v-sites .pre button').forEach(b => b.onclick = () => {
+    const p = b.dataset.p;
+    if (p === 'clear') { SI.from = SI.to = ''; } else { SI.to = today; SI.from = p === 'month' ? today.slice(0, 8) + '01' : addDays(today, -(+p - 1)); }
+    $('#si-from').value = SI.from; $('#si-to').value = SI.to; SI.shown = 100; renderSites();
+  });
+  $$('.shead button').forEach(b => b.onclick = () => { SI.dir = SI.sort === b.dataset.s ? -SI.dir : 1; SI.sort = b.dataset.s; renderSites(); });
+  renderSites();
+}
+
+function renderSites() {
+  const rows = computeSites(), vis = rows.filter(r => r.visited).length, not = rows.length - vis;
+  const hasRange = SI.from || SI.to;
+  $('#si-seg').innerHTML = [['all', 'All sites', rows.length, ''], ['visited', hasRange ? 'Visited in period' : 'Visited', vis, ''], ['not', hasRange ? 'Not visited in period' : 'Not visited yet', not, 'warn']]
+    .map(([k, l, n, w]) => `<button data-k="${k}" class="${w} ${SI.status === k ? 'on' : ''}"><b>${n}</b>${l}</button>`).join('');
+  $$('#si-seg button').forEach(b => b.onclick = () => { SI.status = b.dataset.k; SI.shown = 100; renderSites(); });
+  $('#si-hint').textContent = hasRange
+    ? `“Visited” means at least one completed inspection between ${SI.from ? fmtDate(new Date(SI.from + 'T12:00:00' + (CONFIG.TZ_OFFSET || '+04:00')).toISOString()) : 'the start'} and ${SI.to ? fmtDate(new Date(SI.to + 'T12:00:00' + (CONFIG.TZ_OFFSET || '+04:00')).toISOString()) : 'today'}.`
+    : '“Not visited yet” means no completed inspection has been recorded for the site.';
+  const list = rows.filter(r => SI.status === 'all' || (SI.status === 'visited') === r.visited);
+  const zk = z => numKey((z || '').replace(/\D+/g, ''));
+  const cmp = {
+    zone: (x, y) => zk(x.m.zone) - zk(y.m.zone) || (x.m.zone || '').localeCompare(y.m.zone || '') || numKey(x.m.mosque_number) - numKey(y.m.mosque_number),
+    no: (x, y) => numKey(x.m.mosque_number) - numKey(y.m.mosque_number) || x.m.mosque_number.localeCompare(y.m.mosque_number),
+    name: (x, y) => x.m.name.localeCompare(y.m.name),
+    last: (x, y) => (x.last - y.last) || numKey(x.m.mosque_number) - numKey(y.m.mosque_number)
+  }[SI.sort];
+  list.sort((x, y) => cmp(x, y) * SI.dir);
+  $$('.shead button').forEach(b => { b.classList.toggle('on', b.dataset.s === SI.sort); b.dataset.a = SI.dir > 0 ? '▲' : '▼'; });
+  const box = $('#si-list');
+  if (!list.length) { box.innerHTML = `<div class="empty">${SI.status === 'not' ? 'Every site matching these filters has been visited. 🎉' : 'No sites match these filters.'}</div>`; return; }
+  box.innerHTML = list.slice(0, SI.shown).map(({m, visited, last, lastAll}) => {
+    const url = mapsUrl(m);
+    const lastTxt = visited ? `<b>${fmtDate(new Date(last).toISOString())}</b>`
+      : `<span class="nv">${hasRange ? 'Not visited in period' : 'Not visited yet'}</span>${lastAll ? `<span class="sub">Last visit ${fmtDate(new Date(lastAll).toISOString())}</span>` : ''}`;
+    return `<div class="srow"><span class="zn">${esc(m.zone || '-')}</span><span class="no">${esc(m.mosque_number)}</span>
+      <span class="nm">${esc(m.name.trim())}<span class="sub">${esc(m.location || '')}</span></span><span>${lastTxt}</span>
+      <span>${url ? `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">📍 Map</a>` : '<span class="sub">No location</span>'}</span></div>`;
+  }).join('') + (list.length > SI.shown ? `<div style="text-align:center;padding:14px"><button class="btn sm" id="si-more">Show more (${list.length - SI.shown})</button></div>` : '');
+  const more = $('#si-more'); if (more) more.onclick = () => { SI.shown += 100; renderSites(); };
+}
 
 /* =====================================================================
    ADMIN — manage location list
