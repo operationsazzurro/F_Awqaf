@@ -312,6 +312,9 @@ nav .ic{display:none;font-style:normal}
 .staffp{background:var(--bg2,#f4f7f5);border-bottom:1px solid var(--line);padding:12px 10px;border-radius:0 0 10px 10px}
 .staffp .st{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)}
 .staffp .st b{flex:1}.staffp .st span{color:var(--mut);font-size:13px}
+.staffp .ed{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:8px 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.staffp .ed .w{grid-column:1/3}.staffp .ed label{font-size:12px;font-weight:700;color:var(--mut);display:block;margin-bottom:2px}
+@media(max-width:640px){.staffp .ed{grid-template-columns:1fr}.staffp .ed .w{grid-column:1}}
 .staffp .add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px}
 @media(max-width:640px){.staffp .add{grid-template-columns:1fr 1fr}.staffp .add button{grid-column:1/3}.sacts{flex-direction:column}}
 .srow .no{font-weight:800;color:var(--g);font-size:17px}
@@ -1099,11 +1102,37 @@ async function loadStaff() {
   SI.staff = {}; (data || []).forEach(r => (SI.staff[r.mosque_id] = SI.staff[r.mosque_id] || []).push(r)); SI.staffErr = '';
 }
 function staffPanel(m) {
-  if (SI.staffErr) return `<div class="staffp"><div class="sub" style="color:var(--bad,#b3261e)">Staff list is not set up yet (${esc(SI.staffErr)}). Run site_staff.sql in Supabase.</div></div>`;
+  if (SI.staffErr) return `<div class="staffp" data-m="${m.id}">${S.admin ? editForm(m) : ''}<div class="sub" style="color:var(--bad,#b3261e)">Staff list is not set up yet (${esc(SI.staffErr)}). Run site_staff.sql in Supabase.</div></div>`;
   const l = (SI.staff || {})[m.id] || [];
-  return `<div class="staffp" data-m="${m.id}"><div style="font-weight:800">Deployed staff</div>
+  return `<div class="staffp" data-m="${m.id}">${S.admin ? editForm(m) : ''}<div style="font-weight:800">Deployed staff</div>
     ${l.length ? l.map(r => `<div class="st"><b>${esc(r.staff_name)}</b><span>ID: ${esc(r.staff_id)}</span><button class="btn sm danger" data-sdel="${r.id}" aria-label="Remove ${esc(r.staff_name)}">✕</button></div>`).join('') : '<div class="sub" style="padding:6px 0">No staff added for this site yet.</div>'}
     <div class="add"><input type="text" data-sn placeholder="Staff name" maxlength="80" aria-label="Staff name"><input type="text" data-si placeholder="Staff ID" maxlength="40" aria-label="Staff ID"><button class="btn pri" data-sadd title="Add staff">＋ Add</button></div></div>`;
+}
+const ED = [['name', 'Site (mosque) name', 'text', 1], ['mosque_number', 'Mosque No.', 'text'], ['zone', 'Zone', 'text'], ['location', 'Location / area', 'text', 1], ['supervisor', 'Supervisor', 'text'],
+  ['capacity', 'Capacity', 'number'], ['avg_worshipers', 'Avg. worshippers', 'number'], ['latitude', 'Latitude', 'text'], ['longitude', 'Longitude', 'text'], ['maps_url', 'Google map link', 'text', 1], ['remarks', 'Remarks', 'text', 1]];
+function editForm(m) {
+  return `<div style="font-weight:800">Site details <span class="sub" style="display:inline">(admin)</span></div><div class="ed" data-ed>
+    ${ED.map(([k, l, t, w]) => `<div class="${w ? 'w' : ''}"><label>${l}</label><input data-f="${k}" type="${t}" ${t === 'number' ? 'inputmode="numeric" min="0"' : ''} value="${esc(m[k] == null ? '' : m[k])}"></div>`).join('')}
+    <div class="w"><button class="btn pri" data-esave>Save site details</button></div></div>`;
+}
+async function saveSite(m, panel) {
+  const v = {}; panel.querySelectorAll('[data-ed] [data-f]').forEach(i => v[i.dataset.f] = i.value.trim());
+  if (!v.name || !v.mosque_number) return toast('Site name and Mosque No. are required', true);
+  const patch = {};
+  for (const [k, l, t] of ED) {
+    let x = v[k];
+    if (t === 'number') { if (x === '') x = null; else { if (!/^\d+$/.test(x)) return toast(l + ' must be a whole number', true); x = +x; } }
+    else if (k === 'latitude' || k === 'longitude') { if (x === '') x = null; else { x = parseFloat(x); const lim = k === 'latitude' ? 90 : 180; if (!isFinite(x) || Math.abs(x) > lim) return toast(l + ' is not valid', true); } }
+    else if (x === '') x = (k === 'name' || k === 'mosque_number') ? x : null;
+    patch[k] = x;
+  }
+  if (patch.maps_url && !/^https?:\/\//i.test(patch.maps_url)) return toast('Google map link must start with http:// or https://', true);
+  if ((patch.latitude == null) !== (patch.longitude == null)) return toast('Enter both latitude and longitude, or leave both empty', true);
+  const b = panel.querySelector('[data-esave]'); b.disabled = true;
+  const {data, error} = await sb.from('mosques').update(patch).eq('id', m.id).select();
+  b.disabled = false;
+  if (error || !data || !data.length) return toast(error ? 'Could not save: ' + error.message : 'Not saved - only signed-in admins can edit sites (run mosque_edit.sql in Supabase if you are an admin)', true);
+  Object.assign(m, data[0]); toast('Site details saved'); renderSites();
 }
 async function addStaff(mid, panel) {
   const n = panel.querySelector('[data-sn]').value.trim(), i = panel.querySelector('[data-si]').value.trim();
@@ -1239,9 +1268,11 @@ function renderSites() {
       <span class="nm">${esc(m.name.trim())}<span class="sub">${esc(m.location || '')}</span></span><span>${lastTxt}</span>
       <span class="sacts">${url ? `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">📍 Map</a>` : '<span class="sub">No location</span>'}<button class="btn sm ${SI.open === m.id ? 'pri' : ''}" data-det="${m.id}" aria-expanded="${SI.open === m.id}">Details${((SI.staff || {})[m.id] || []).length ? ' (' + SI.staff[m.id].length + ')' : ''}</button></span></div>` + (SI.open === m.id ? staffPanel(m) : '');
   }).join('') + (list.length > SI.shown ? `<div style="text-align:center;padding:14px"><button class="btn sm" id="si-more">Show more (${list.length - SI.shown})</button></div>` : '');
-  $$('[data-det]', box).forEach(b => b.onclick = () => { const id = +b.dataset.det; SI.open = SI.open === id ? null : id; renderSites(); if (SI.open) { const p = $('.staffp input', box); if (p) p.focus(); } });
+  $$('[data-det]', box).forEach(b => b.onclick = () => { const id = +b.dataset.det; SI.open = SI.open === id ? null : id; renderSites(); if (SI.open) { const p = $('.staffp [data-sn]', box); if (p && !S.admin) p.focus(); } });
   $$('.staffp', box).forEach(p => {
     const mid = +p.dataset.m; if (!mid) return;
+    const es = p.querySelector('[data-esave]'); if (es) es.onclick = () => saveSite(S.mosques.find(x => x.id === mid), p);
+    if (!p.querySelector('[data-sadd]')) return;
     p.querySelector('[data-sadd]').onclick = () => addStaff(mid, p);
     p.querySelectorAll('input').forEach(inp => inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addStaff(mid, p); } });
     p.querySelectorAll('[data-sdel]').forEach(b => b.onclick = () => delStaff(b.dataset.sdel, mid));
